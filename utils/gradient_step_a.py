@@ -6,7 +6,7 @@ class Gradient_Step_A(torch.autograd.Function):
 	"""docstring for Gradient_Step_A"""
 	
 	@staticmethod
-	def forward(ctx, x, a, b, func, var, mean = None):
+	def forward(ctx, x, a, b, func, mean, var):
 
 		# Save variables for backward
 		ctx.save_for_backward(x, a, b)
@@ -63,6 +63,7 @@ class Gradient_Step_A(torch.autograd.Function):
 		d2lv_dax = 2 * (dev_dx * dev_da + ev * d2ev_dax)
 
 		# L value for mean if needed
+		d2lm_dax = 1.0
 		if ctx.mean:
 
 			# E values for mean
@@ -73,27 +74,66 @@ class Gradient_Step_A(torch.autograd.Function):
 			# Update L with L value for mean
 			d2lm_dax = 2 * (dem_dx * dem_da + em * d2em_dax)
 
-			return grad_output * (d2lm_dax + d2lv_dax), None, None, None, None, None
+		return grad_output * (d2lm_dax + d2lv_dax), None, None, None, None, None
 
-		return grad_output * d2lv_dax, None, None, None, None
 
+class GSA(torch.nn.Module):
+	"""docstring for GSA"""
+
+	def __init__(self):
+		super(GSA, self).__init__()
+		self.gsa = Gradient_Step_A.apply
+
+	def forward(self, x, a, b, func, var, mean = None):
+		return self.gsa(x, a, b, func, mean, var)
+		
 
 # QUICK TEST
-gsa = Gradient_Step_A.apply
+
+# Initializations
+gsa = GSA()
 sig = Sigmoid()
 a = torch.ones(1)
 b = torch.zeros(1)
+mean = torch.Tensor([0.1])
+var = torch.Tensor([0.01])
+lr = torch.ones(1)
 
+# Input data standard normalized
 data = torch.rand(1000)
 data = (data - data.mean()) / (data.std())
-print(sig.f(data, a, b).mean(), sig.f(data, a, b).var(unbiased = True))
+
+# Init stats
+mb = sig.f(data, a, b).mean().item()
+vb = sig.f(data, a, b).var(unbiased = False).item()
+print(f'Mean chosen:\t{mean.item()}\t',
+      f'Var chosen: \t{var.item()}')
+print(f'Mean before:\t{mb}\t',
+      f'Var before:\t{vb}')
+
+# Track data gradients
 data.requires_grad = True
 
-out = gsa(data, a, b, sig, 0.01, 0.1)
-a = a - out
+# Calculate grad descent step w.r.t. a
+out = gsa(x = data,
+          a = a,
+          b = b,
+          func = sig,
+          mean = mean,
+          var = var)
+
+# Gradient descent step w.r.t. a
+a = a - lr * out
+
+# Calculate gradients w.r.t. data
 out.backward()
+
+# After stats (should trend towards the specified mean and var)
 with torch.no_grad():
-	print(sig.f(data, a, b).mean(), sig.f(data, a, b).var(unbiased = True))
+	ma = sig.f(data, a, b).mean().item()
+	va = sig.f(data, a, b).var(unbiased = False).item()
+	print(f'Mean after:\t{ma}\t',
+	      f'Var after:\t{va}')
 
 
 ###
