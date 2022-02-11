@@ -31,6 +31,11 @@ class Newton_Step_B(torch.autograd.Function):
 		# Newton step b
 		if var:
 
+			# L values
+			dl_da = 2 * (em * dem_da + ev * dev_da)
+			dl_db = dlm_db + dlv_db
+
+
 			nb = (dl_db * d2l_da2 - dl_da * d2l_dab) / (d2l_da2 * d2l_db2 - d2l_dab ** 2)
 
 		else:
@@ -45,7 +50,7 @@ class Newton_Step_B(torch.autograd.Function):
 		x, a, b = ctx.saved_tensors
 
 		# L values
-		dl_db = None
+		dl_db = 
 
 		# Newton step b
 		if ctx.var:
@@ -65,25 +70,25 @@ class NSB(torch.nn.Module):
 
 	def forward(self, x, a, b, func, mean, var = None):
 		return self.gsa(x, a, b, func, mean, var)
-
+		
 
 
 # TEST
-# nsb = Newton_Step_B.apply
-# sig = Sigmoid()
-# a = torch.ones(1)
-# b = torch.zeros(1)
-#
-# data = torch.rand(1000)
-# data = (data - data.mean()) / (data.std())
-# print(sig.f(data, a, b).mean(), sig.f(data, a, b).var(unbiased = True))
-# data.requires_grad = True
-#
-# out = nsb(data, a, b, sig, 0.01)
-# b = b - out
-# out.backward()
-# with torch.no_grad():
-# 	print(sig.f(data, a, b).mean(), sig.f(data, a, b).var(unbiased = True))
+nsb = Newton_Step_B.apply
+sig = Sigmoid()
+a = torch.ones(1)
+b = torch.zeros(1)
+
+data = torch.rand(1000)
+data = (data - data.mean()) / (data.std())
+print(sig.f(data, a, b).mean(), sig.f(data, a, b).var(unbiased = True))
+data.requires_grad = True
+
+out = nsb(data, a, b, sig, 0.01)
+b = b - out
+out.backward()
+with torch.no_grad():
+	print(sig.f(data, a, b).mean(), sig.f(data, a, b).var(unbiased = True))
 
 
 
