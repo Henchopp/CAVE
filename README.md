@@ -43,6 +43,7 @@ class Sigmoid(CAVEBaseFunction):
 		sig = x.sigmoid()
 		return sig * (1 - sig) * (1 - 2 * sig)
 
+	# Third derivative
 	def d3fx(self, x):
 		sig = x.sigmoid()
 		return sig * (1 - sig) * (6 * sig * (sig - 1) + 1)
