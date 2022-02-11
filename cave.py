@@ -6,6 +6,7 @@ from utils.newton_step_a import NSA
 from utils.newton_step_b import NSB
 
 
+
 class CAVE(torch.nn.Module):
 	"""docstring for CAVE"""
 
@@ -13,26 +14,30 @@ class CAVE(torch.nn.Module):
 	             adam = False, a_init = 1.0, b_init = 0.0):
 		super(CAVE, self).__init__()
 
+		self.softplus = Softplus()
+		self.sigmoid = Sigmoid()
+
+
 	def opt_none(self, x):
 		return x
 
-	def opt_low(self, x, low)
-		return
+	def opt_low(self, x, low):
+		return self.softplus.fx(x) + low
 
 	def opt_high(self, x, high):
-		return
+		return -self.softplus.fx(x) + high
 
 	def opt_mean(self, x, mean):
-		return
+		return x - torch.mean(x) + mean
 
 	def opt_var(self, x, var):
-		return
+		return torch.sqrt(var / torch.var(x)) * x
 
 	def opt_range(self, x, low, high):
-		return
+		return (high - low) * self.sigmoid.fx(x) + low
 
 	def opt_moments(self, x, mean, var):
-		return
+		return torch.sqrt(var / torch.var(x)) * (x - torch.mean(x)) + mean
 
 	def opt_all(self, x, low, high, mean, var):
 		return
@@ -96,4 +101,9 @@ elif newton's method:
 	b -= lr_nm * nsb_out
 '''
 
+c = CAVE(10, 2, 0.1, 0.2)
+
+x = torch.Tensor([1, 2, 3, 4, 5, 6, 7, 8])
+
+print(c.opt_range(x, -1, 1))
 ###

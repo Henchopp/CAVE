@@ -1,5 +1,5 @@
 import torch
-from cave_base_functions import Sigmoid, SoftPlus
+from .cave_base_functions import Sigmoid, Softplus
 
 
 class Newton_Step_A(torch.autograd.Function):
@@ -36,15 +36,15 @@ class Newton_Step_A(torch.autograd.Function):
 
 			# TODO: update dl_da and d2l_da2 with mean terms
 
-			na = 
+			na = None
 
 			return (dl_da * d2l_db2 - dl_db * d2l_dab) / (d2l_da2 * d2l_db2 - d2l_dab ** 2)
-		
+
 		return dl_da / d2l_da2
 
 	@staticmethod
 	def backward(ctx, grad_output):
-		
+
 		# Read saved tensors
 		x, a, b = ctx.saved_tensors
 

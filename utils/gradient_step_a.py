@@ -1,10 +1,10 @@
 import torch
-from cave_base_functions import Sigmoid, Softplus
+from .cave_base_functions import Sigmoid, Softplus
 
 
 class Gradient_Step_A(torch.autograd.Function):
 	"""docstring for Gradient_Step_A"""
-	
+
 	@staticmethod
 	def forward(ctx, x, a, b, func, mean, var):
 
@@ -86,7 +86,7 @@ class GSA(torch.nn.Module):
 
 	def forward(self, x, a, b, func, var, mean = None):
 		return self.gsa(x, a, b, func, mean, var)
-		
+
 
 # QUICK TEST
 

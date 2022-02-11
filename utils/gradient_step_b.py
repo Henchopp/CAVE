@@ -1,5 +1,5 @@
 import torch
-from cave_base_functions import Sigmoid, Softplus
+from .cave_base_functions import Sigmoid, Softplus
 
 
 class Gradient_Step_B(torch.autograd.Function):
@@ -32,7 +32,7 @@ class Gradient_Step_B(torch.autograd.Function):
 			# E values for variance
 			ev = (f ** 2).mean() - f.mean() ** 2 - var
 			dev_db = 2 * ((f * df_db).mean() - f.mean() * dem_db)
-			
+
 			# Update L with L value for variance
 			dlv_db = 2 * ev * dev_db
 
@@ -40,7 +40,7 @@ class Gradient_Step_B(torch.autograd.Function):
 
 	@staticmethod
 	def backward(ctx, grad_output):
-		
+
 		# Read saved tensors
 		x, a, b = ctx.saved_tensors
 
