@@ -6,13 +6,14 @@ class Newton_Step_AB(torch.autograd.Function):
 	"""docstring for Newton_Step_AB"""
 
 	@staticmethod
-	def forward(ctx, x, x_copy, a, b, func, mean, var):
+	def forward(ctx, x, x_copy, a, b, func, mean, var, dim):
 
 		# Save variables for backward
 		ctx.save_for_backward(x, a, b)
 		ctx.func = func
 		ctx.mean = mean
 		ctx.var = var
+		ctx.dim = dim
 
 		# f values
 		f = func.f(x, a, b)
@@ -23,20 +24,20 @@ class Newton_Step_AB(torch.autograd.Function):
 		d2f_db2 = func.d2f_db2(x, a, b)
 
 		# Em values
-		em = f.mean() - mean
-		dem_da = df_da.mean()
-		dem_db = df_db.mean()
-		d2em_da2 = d2f_da2.mean()
-		d2em_dab = d2f_dab.mean()
-		d2em_db2 = d2f_db2.mean()
+		em = f.mean(**dim) - mean
+		dem_da = df_da.mean(**dim)
+		dem_db = df_db.mean(**dim)
+		d2em_da2 = d2f_da2.mean(**dim)
+		d2em_dab = d2f_dab.mean(**dim)
+		d2em_db2 = d2f_db2.mean(**dim)
 
 		# Ev values
-		ev = (f ** 2).mean() - f.mean() ** 2 - var
-		dev_da = 2 * ((f * df_da).mean() - f.mean() * dem_da)
-		dev_db = 2 * ((f * df_db).mean() - f.mean() * dem_db)
-		d2ev_da2 = 2 * ((df_da ** 2 + f * d2f_da2).mean() - dem_da ** 2 - f.mean() * d2em_da2)
-		d2ev_dab = 2 * ((df_da * df_db + f * d2f_dab).mean() - dem_da * dem_db - f.mean() * d2em_dab)
-		d2ev_db2 = 2 * ((df_db ** 2 + f * d2f_db2).mean() - dem_db ** 2 - f.mean() * d2em_db2)
+		ev = (f ** 2).mean(**dim) - f.mean(**dim) ** 2 - var
+		dev_da = 2 * ((f * df_da).mean(**dim) - f.mean(**dim) * dem_da)
+		dev_db = 2 * ((f * df_db).mean(**dim) - f.mean(**dim) * dem_db)
+		d2ev_da2 = 2 * ((df_da ** 2 + f * d2f_da2).mean(**dim) - dem_da ** 2 - f.mean(**dim) * d2em_da2)
+		d2ev_dab = 2 * ((df_da * df_db + f * d2f_dab).mean(**dim) - dem_da * dem_db - f.mean(**dim) * d2em_dab)
+		d2ev_db2 = 2 * ((df_db ** 2 + f * d2f_db2).mean(**dim) - dem_db ** 2 - f.mean(**dim) * d2em_db2)
 
 		# L values
 		dl_da = 2 * (em * dem_da + ev * dev_da)
@@ -70,16 +71,20 @@ class Newton_Step_AB(torch.autograd.Function):
 		d3f_da2x = ctx.func.d3f_da2x(x, a, b)
 		d3f_dabx = ctx.func.d3f_dabx(x, a, b)
 		d3f_db2x = ctx.func.d3f_db2x(x, a, b)
-		N = x.numel()
+		
+		# Get N
+		N = 1
+		for i in ctx.dim['dim']:
+			N *= x.shape[i]
 
 		# Em values
-		em = f.mean() - ctx.mean
-		dem_da = df_da.mean()
-		dem_db = df_db.mean()
+		em = f.mean(**dim) - ctx.mean
+		dem_da = df_da.mean(**dim)
+		dem_db = df_db.mean(**dim)
 		dem_dx = df_dx / N
-		d2em_da2 = d2f_da2.mean()
-		d2em_dab = d2f_dab.mean()
-		d2em_db2 = d2f_db2.mean()
+		d2em_da2 = d2f_da2.mean(**dim)
+		d2em_dab = d2f_dab.mean(**dim)
+		d2em_db2 = d2f_db2.mean(**dim)
 		d2em_dax = d2f_dax / N
 		d2em_dbx = d2f_dbx / N
 		d3em_da2x = d3f_da2x / N
@@ -87,23 +92,23 @@ class Newton_Step_AB(torch.autograd.Function):
 		d3em_db2x = d3f_db2x / N
 
 		# Ev values
-		ev = (f ** 2).mean() - f.mean() ** 2 - ctx.var
-		dev_da = 2 * ((f * df_da).mean() - f.mean() * dem_da)
-		dev_db = 2 * ((f * df_db).mean() - f.mean() * dem_db)
-		dev_dx = 2 * df_dx * (f / N - f.mean())
-		d2ev_da2 = 2 * ((df_da ** 2 + f * d2f_da2).mean() - dem_da ** 2 - f.mean() * d2em_da2)
-		d2ev_dab = 2 * ((df_da * df_db + f * d2f_dab).mean() - dem_da * dem_db - f.mean() * d2em_dab)
-		d2ev_db2 = 2 * ((df_db ** 2 + f * d2f_db2).mean() - dem_db ** 2 - f.mean() * d2em_db2)
+		ev = (f ** 2).mean(**dim) - f.mean(**dim) ** 2 - ctx.var
+		dev_da = 2 * ((f * df_da).mean(**dim) - f.mean(**dim) * dem_da)
+		dev_db = 2 * ((f * df_db).mean(**dim) - f.mean(**dim) * dem_db)
+		dev_dx = 2 * df_dx * (f / N - f.mean(**dim))
+		d2ev_da2 = 2 * ((df_da ** 2 + f * d2f_da2).mean(**dim) - dem_da ** 2 - f.mean(**dim) * d2em_da2)
+		d2ev_dab = 2 * ((df_da * df_db + f * d2f_dab).mean(**dim) - dem_da * dem_db - f.mean(**dim) * d2em_dab)
+		d2ev_db2 = 2 * ((df_db ** 2 + f * d2f_db2).mean(**dim) - dem_db ** 2 - f.mean(**dim) * d2em_db2)
 		d2ev_dax = 2 * (df_dx * df_da + f * d2f_dax - \
-		                (df_dx * df_da.mean() - f.mean() * d2f_dax) / N)
+		                (df_dx * df_da.mean(**dim) - f.mean(**dim) * d2f_dax) / N)
 		d2ev_dbx = 2 * (df_dx * df_db + f * d2f_dbx - \
-		                (df_dx * df_db.mean() - f.mean() * d2f_dbx) / N)
+		                (df_dx * df_db.mean(**dim) - f.mean(**dim) * d2f_dbx) / N)
 		d3ev_da2x = 2 * ((2 * df_da * d2f_dax + df_dx * d2f_da2 + f * d3f_da2x) / N - \
-		                 2 * dem_da * d2em_dax - df_dx * d2em_da2 / N - f.mean() * d3em_da2x)
+		                 2 * dem_da * d2em_dax - df_dx * d2em_da2 / N - f.mean(**dim) * d3em_da2x)
 		d3ev_dabx = 2 * ((d2f_dax * df_db + df_da * d2f_dbx + df_dx * d2f_dab + f * d3f_dabx) / N - \
-		                 d2em_dax * dem_db - dem_da * d2em_dbx - df_dx * d2em_dab / N - f.mean() * d3em_dabx)
+		                 d2em_dax * dem_db - dem_da * d2em_dbx - df_dx * d2em_dab / N - f.mean(**dim) * d3em_dabx)
 		d3ev_db2x = 2 * ((2 * df_db * d2f_dbx + df_dx * d2f_db2 + f * d3f_db2x) / N - \
-		                 2 * dem_db * d2em_dbx - df_dx * d2em_db2 / N - f.mean() * d3em_db2x)
+		                 2 * dem_db * d2em_dbx - df_dx * d2em_db2 / N - f.mean(**dim) * d3em_db2x)
 
 		# L values
 		dl_da = 2 * (em * dem_da + ev * dev_da)
@@ -132,7 +137,7 @@ class Newton_Step_AB(torch.autograd.Function):
 		dna_dx = (den * dnuma_dx - numa * dden_dx) / (den ** 2)
 		dnb_dx = (den * dnumb_dx - numb * dden_dx) / (den ** 2)
 
-		return grad_output1 * dna_dx, grad_output2 * dnb_dx, None, None, None, None, None
+		return grad_output1 * dna_dx, grad_output2 * dnb_dx, None, None, None, None, None, None
 
 
 class NSAB(torch.nn.Module):
@@ -142,8 +147,8 @@ class NSAB(torch.nn.Module):
 		super(NSAB, self).__init__()
 		self.nsab = Newton_Step_AB.apply
 
-	def forward(self, x, a, b, func, mean, var):
-		return self.nsab(x, x, a, b, func, mean, var)
+	def forward(self, x, a, b, func, mean, var, dim):
+		return self.nsab(x, x, a, b, func, mean, var, dim)
 
 
 # QUICK TEST
@@ -153,47 +158,49 @@ nsab = NSAB()
 sig = Sigmoid()
 a = torch.ones(1)
 b = torch.zeros(1)
-mean = torch.Tensor([0.4])
-var = torch.Tensor([0.05])
-lr = 0.1 * torch.ones(1)
+mean = torch.rand(5,1)
+var = torch.rand(5,1) * 0.1
+lr = torch.ones(1)
 
 # Input data standard normalized
-data = torch.rand(1000)
-data = (data - data.mean()) / (data.std())
+data = torch.rand(5, 1000)
+dim = {'dim': [1], 'keepdim': True}
+data = (data - data.mean(**dim)) / (data.std(**dim))
 
 # Init stats
-mb = sig.f(data, a, b).mean().item()
-vb = sig.f(data, a, b).var(unbiased = False).item()
-print(f'Mean chosen:\t{mean.item()}\t',
-      f'Var chosen: \t{var.item()}')
-print(f'Mean before:\t{mb}\t',
-      f'Var before:\t{vb}')
+mb = sig.f(data, a, b).mean(**dim)
+vb = sig.f(data, a, b).var(unbiased = False, **dim)
+print(f'Mean chosen:\n{mean}\n',
+      f'Var chosen: \n{var}\n')
+print(f'Mean before:\n{mb}\n',
+      f'Var before:\n{vb}\n')
 
 # Track data gradients
 data.requires_grad = True
 
-# Calculate grad descent step w.r.t. a
+# Calculate grad descent step w.r.t. b
 out = nsab(x = data,
            a = a,
            b = b,
            func = sig,
            mean = mean,
-           var = var)
+           var = var,
+           dim = dim)
 
-# Gradient descent step w.r.t. a
+# Gradient descent step w.r.t. b
 a = a - lr * out[0]
 b = b - lr * out[1]
 
 # Calculate gradients w.r.t. data
-out = out[0] + out[1]
+out = out[0].sum() + out[1].sum()
 out.backward()
 
 # After stats (should trend towards the specified mean and var)
 with torch.no_grad():
-	ma = sig.f(data, a, b).mean().item()
-	va = sig.f(data, a, b).var(unbiased = False).item()
-	print(f'Mean after:\t{ma}\t',
-	      f'Var after:\t{va}')
+	ma = sig.f(data, a, b).mean(**dim)
+	va = sig.f(data, a, b).var(unbiased = False, **dim)
+	print(f'Mean after:\n{ma}\n',
+	      f'Var after:\n{va}')
 
 
 ###
