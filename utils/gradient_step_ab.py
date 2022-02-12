@@ -54,7 +54,7 @@ class Gradient_Step_AB(torch.autograd.Function):
 		em = f.mean() - ctx.mean
 		dem_da = df_da.mean()
 		dem_db = df_db.mean()
-		dem_dx = df_dx.mean()
+		dem_dx = df_dx / N
 		d2em_dax = d2f_dax / N
 		d2em_dbx = d2f_dbx / N
 
