@@ -27,17 +27,17 @@ class CAVE(torch.nn.Module):
 	def opt_high(self, x, high):
 		return -self.softplus.fx(x) + high
 
-	def opt_mean(self, x, mean):
-		return x - torch.mean(x) + mean
+	def opt_mean(self, x, mean, dim):
+		return x - x.mean(**dim) + mean
 
-	def opt_var(self, x, var):
-		return torch.sqrt(var / torch.var(x)) * x
+	def opt_var(self, x, var, dim):
+		return (var / x.var(unbiased = False, **dim)).sqrt() * x
 
 	def opt_range(self, x, low, high):
 		return (high - low) * self.sigmoid.fx(x) + low
 
-	def opt_moments(self, x, mean, var):
-		return torch.sqrt(var / torch.var(x)) * (x - torch.mean(x)) + mean
+	def opt_moments(self, x, mean, var, dim):
+		return (var / x.var(unbiased = False, **dim)).sqrt() * (x - x.mean(**dim)) + mean
 
 
 	# CAVE Processing
@@ -47,7 +47,7 @@ class CAVE(torch.nn.Module):
 	def cave_postprocess(self, x, low, high, mean, var):
 		return
 
-	
+
 	# CAVE transforms
 	def opt_grad_mean(self, x, low, high, mean):
 		return
