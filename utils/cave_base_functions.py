@@ -7,6 +7,10 @@ from torch.nn.functional import softplus
 class CAVEBaseFunction(ABC):
 	"""docstring for CAVEBaseFunction"""
 
+	def __init__(self, low = None, high = None):
+		self.low = low
+		self.high = high
+
 	# User-implemented function and derivatives
 	@abstractmethod
 	def fx(self, x: torch.Tensor) -> torch.Tensor:
@@ -29,7 +33,7 @@ class CAVEBaseFunction(ABC):
 		                          "CAVEBaseFunction.")
 
 
-	# Forward methods
+	# Forward functions
 	def f(self, x: torch.Tensor, a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
 		return self.fx(a * x + b)
 
