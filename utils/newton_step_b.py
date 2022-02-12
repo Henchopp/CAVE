@@ -1,45 +1,34 @@
 import torch
-from .cave_base_functions import Sigmoid
+from cave_base_functions import Sigmoid
 
 
 class Newton_Step_B(torch.autograd.Function):
 	"""docstring for Newton_Step_B"""
 
 	@staticmethod
-	def forward(ctx, x, a, b, func, mean, var):
+	def forward(ctx, x, a, b, func, mean):
 
 		# Save variables for backward
 		ctx.save_for_backward(x, a, b)
 		ctx.func = func
 		ctx.mean = mean
-		ctx.var = var
 
 		# f values
 		f = func.f(x, a, b)
 		df_db = func.df_db(x, a, b)
 		d2f_db2 = func.d2f_db2(x, a, b)
 
-		# E values
+		# Em values
 		em = f.mean() - mean
 		dem_db = df_db.mean()
 		d2em_db2 = d2f_db2.mean()
 
-		# L values
+		# Lm values
 		dlm_db = 2 * em * dem_db
 		d2lm_db2 = 2 * (dem_db ** 2 + em * d2em_db2)
 
-		# Newton step b
-		if var:
-
-			# L values
-			dl_da = 2 * (em * dem_da + ev * dev_da)
-			dl_db = dlm_db + dlv_db
-
-
-			nb = (dl_db * d2l_da2 - dl_da * d2l_dab) / (d2l_da2 * d2l_db2 - d2l_dab ** 2)
-
-		else:
-			nb = dlm_db / d2lm_db2
+		# Newton step
+		nb = dlm_db / d2lm_db2
 
 		return nb
 
@@ -49,16 +38,33 @@ class Newton_Step_B(torch.autograd.Function):
 		# Read saved tensors
 		x, a, b = ctx.saved_tensors
 
-		# L values
-		dl_db = 
+		# f values
+		f = ctx.func.f(x, a, b)
+		df_db = ctx.func.df_db(x, a, b)
+		df_dx = ctx.func.df_dx(x, a, b)
+		d2f_db2 = ctx.func.d2f_db2(x, a, b)
+		d2f_dbx = ctx.func.d2f_dbx(x, a, b)
+		d3f_db2x = ctx.func.d3f_db2x(x, a, b)
+		N = x.numel()
 
-		# Newton step b
-		if ctx.var:
-			pass
-		else:
-			dnb_dx = (d2l_db2 * d2l_dbx - dl_db * d3l_db2x)
+		# Em values
+		em = f.mean() - ctx.mean
+		dem_db = df_db.mean()
+		dem_dx = df_dx / N
+		d2em_db2 = d2f_db2.mean()
+		d2em_dbx = d2f_dbx / N
+		d3em_db2x = d3f_db2x / N
 
-		return grad_output
+		# Lm values
+		dlm_db = 2 * em * dem_db
+		d2lm_db2 = 2 * (dem_db ** 2 + em * d2em_db2)
+		d2lm_dbx = 2 * (dem_dx * dem_db + em * d2em_dbx)
+		d3lm_db2x = 2 * (2 * dem_db * d2em_dbx + dem_dx * d2em_db2 + em * d3em_db2x)
+
+		# Newton step
+		dnb_dx = (d2lm_db2 * d2lm_dbx - dlm_db * d3lm_db2x)
+
+		return grad_output * dnb_dx, None, None, None, None
 
 
 class NSB(torch.nn.Module):
@@ -68,28 +74,55 @@ class NSB(torch.nn.Module):
 		super(NSB, self).__init__()
 		self.nsb = Newton_Step_B.apply
 
-	def forward(self, x, a, b, func, mean, var = None):
-		return self.gsa(x, a, b, func, mean, var)
-		
+	def forward(self, x, a, b, func, mean):
+		return self.nsb(x, a, b, func, mean)
+	
 
+# QUICK TEST
 
-# TEST
-nsb = Newton_Step_B.apply
+# Initializations
+nsb = NSB()
 sig = Sigmoid()
 a = torch.ones(1)
 b = torch.zeros(1)
+mean = torch.Tensor([0.1])
+var = torch.Tensor([0.01])
+lr = torch.ones(1)
 
+# Input data standard normalized
 data = torch.rand(1000)
 data = (data - data.mean()) / (data.std())
-print(sig.f(data, a, b).mean(), sig.f(data, a, b).var(unbiased = True))
+
+# Init stats
+mb = sig.f(data, a, b).mean().item()
+vb = sig.f(data, a, b).var(unbiased = False).item()
+print(f'Mean chosen:\t{mean.item()}\t',
+      f'Var chosen: \t{var.item()}')
+print(f'Mean before:\t{mb}\t',
+      f'Var before:\t{vb}')
+
+# Track data gradients
 data.requires_grad = True
 
-out = nsb(data, a, b, sig, 0.01)
-b = b - out
-out.backward()
-with torch.no_grad():
-	print(sig.f(data, a, b).mean(), sig.f(data, a, b).var(unbiased = True))
+# Calculate grad descent step w.r.t. a
+out = nsb(x = data,
+          a = a,
+          b = b,
+          func = sig,
+          mean = mean)
 
+# Gradient descent step w.r.t. a
+b = b - lr * out
+
+# Calculate gradients w.r.t. data
+out.backward()
+
+# After stats (should trend towards the specified mean and var)
+with torch.no_grad():
+	ma = sig.f(data, a, b).mean().item()
+	va = sig.f(data, a, b).var(unbiased = False).item()
+	print(f'Mean after:\t{ma}\t',
+	      f'Var after:\t{va}')
 
 
 ###
