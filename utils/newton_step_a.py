@@ -65,7 +65,7 @@ class Newton_Step_A(torch.autograd.Function):
 		d2ev_dax = 2 * (df_dx * df_da + f * d2f_dax - \
 		                (df_dx * dem_da - f.mean() * d2f_dax) / N)
 		d3ev_da2x = 2 * ((2 * df_da * d2f_dax + df_dx * d2f_da2 + f * d3f_da2x) / N - \
-		                 2 * dem_da * d2em_dax - f * d2em_da2 / N - f.mean() * d3em_da2x)
+		                 2 * dem_da * d2em_dax - df_dx * d2em_da2 / N - f.mean() * d3em_da2x)
 
 		# Lv values
 		dlv_da = 2 * ev * dev_da
