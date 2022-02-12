@@ -40,6 +40,14 @@ class CAVE(torch.nn.Module):
 		return torch.sqrt(var / torch.var(x)) * (x - torch.mean(x)) + mean
 
 
+	# CAVE Processing
+	def cave_preprocess(self, x, low, high, mean, var):
+		return
+
+	def cave_postprocess(self, x, low, high, mean, var):
+		return
+
+	
 	# CAVE transforms
 	def opt_grad_mean(self, x, low, high, mean):
 		return
@@ -59,12 +67,7 @@ class CAVE(torch.nn.Module):
 	def opt_newton_joint(self, x, low, high, mean, var):
 		return
 
-
-	# CAVE Processing
-	def cave_preprocess(self, x, low, high, mean, var):
-		return
-
-	def cave_postprocess(self, x, low, high, mean, var):
+	def opt_cave(self, x, low, high, mean, var):
 		return
 
 
