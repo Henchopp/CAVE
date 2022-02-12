@@ -6,7 +6,6 @@ from utils.newton_step_a import NSA
 from utils.newton_step_b import NSB
 
 
-
 class CAVE(torch.nn.Module):
 	"""docstring for CAVE"""
 
@@ -18,6 +17,7 @@ class CAVE(torch.nn.Module):
 		self.sigmoid = Sigmoid()
 
 
+	# Basic transforms
 	def opt_none(self, x):
 		return x
 
@@ -39,9 +39,36 @@ class CAVE(torch.nn.Module):
 	def opt_moments(self, x, mean, var):
 		return torch.sqrt(var / torch.var(x)) * (x - torch.mean(x)) + mean
 
-	def opt_all(self, x, low, high, mean, var):
+
+	# CAVE transforms
+	def opt_grad_mean(self, x, low, high, mean):
 		return
 
+	def opt_grad_var(self, x, low, high, var):
+		return
+
+	def opt_grad_joint(self, x, low, high, mean, var):
+		return
+
+	def opt_newton_mean(self, x, low, high, mean):
+		return
+
+	def opt_newton_var(self, x, low, high, var):
+		return
+
+	def opt_newton_joint(self, x, low, high, mean, var):
+		return
+
+
+	# CAVE Processing
+	def cave_preprocess(self, x, low, high, mean, var):
+		return
+
+	def cave_postprocess(self, x, low, high, mean, var):
+		return
+
+
+	# Forward
 	def forward(self, x, low = None, high = None, mean = None, var = None):
 		return
 
