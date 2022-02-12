@@ -6,13 +6,14 @@ class Gradient_Step_AB(torch.autograd.Function):
 	"""docstring for Gradient_Step_AB"""
 	
 	@staticmethod
-	def forward(ctx, x, x_copy, a, b, func, mean, var):
+	def forward(ctx, x, x_copy, a, b, func, mean, var, dim):
 		
 		# Save variables for backward
 		ctx.save_for_backward(x, a, b)
 		ctx.func = func
 		ctx.mean = mean
 		ctx.var = var
+		ctx.dim = dim
 
 		# f values
 		f = func.f(x, a, b)
@@ -20,14 +21,14 @@ class Gradient_Step_AB(torch.autograd.Function):
 		df_db = func.df_db(x, a, b)
 
 		# Em values
-		em = f.mean() - mean
-		dem_da = df_da.mean()
-		dem_db = df_db.mean()
+		em = f.mean(**dim) - mean
+		dem_da = df_da.mean(**dim)
+		dem_db = df_db.mean(**dim)
 
 		# Ev values
-		ev = (f ** 2).mean() - f.mean() ** 2 - var
-		dev_da = 2 * ((f * df_da).mean() - f.mean() * dem_da)
-		dev_db = 2 * ((f * df_db).mean() - f.mean() * dem_db)
+		ev = (f ** 2).mean(**dim) - f.mean(**dim) ** 2 - var
+		dev_da = 2 * ((f * df_da).mean(**dim) - f.mean(**dim) * dem_da)
+		dev_db = 2 * ((f * df_db).mean(**dim) - f.mean(**dim) * dem_db)
 
 		# L values
 		dl_da = 2 * (em * dem_da + ev * dev_da)
@@ -48,31 +49,35 @@ class Gradient_Step_AB(torch.autograd.Function):
 		df_dx = ctx.func.df_dx(x, a, b)
 		d2f_dax = ctx.func.d2f_dax(x, a, b)
 		d2f_dbx = ctx.func.d2f_dbx(x, a, b)
-		N = x.numel()
+		
+		# Get N
+		N = 1
+		for i in ctx.dim['dim']:
+			N *= x.shape[i]
 
 		# Em values
-		em = f.mean() - ctx.mean
-		dem_da = df_da.mean()
-		dem_db = df_db.mean()
+		em = f.mean(**dim) - ctx.mean
+		dem_da = df_da.mean(**dim)
+		dem_db = df_db.mean(**dim)
 		dem_dx = df_dx / N
 		d2em_dax = d2f_dax / N
 		d2em_dbx = d2f_dbx / N
 
 		# Ev values
-		ev = (f ** 2).mean() - f.mean() ** 2 - ctx.var
-		dev_da = 2 * ((f * df_da).mean() - f.mean() * dem_da)
-		dev_db = 2 * ((f * df_db).mean() - f.mean() * dem_db)
-		dev_dx = 2 * df_dx * (f / N - f.mean())
+		ev = (f ** 2).mean(**dim) - f.mean(**dim) ** 2 - ctx.var
+		dev_da = 2 * ((f * df_da).mean(**dim) - f.mean(**dim) * dem_da)
+		dev_db = 2 * ((f * df_db).mean(**dim) - f.mean(**dim) * dem_db)
+		dev_dx = 2 * df_dx * (f / N - f.mean(**dim))
 		d2ev_dax = 2 * (df_dx * df_da + f * d2f_dax - \
-		                (df_dx * df_da.mean() - f.mean() * d2f_dax) / N)
+		                (df_dx * df_da.mean(**dim) - f.mean(**dim) * d2f_dax) / N)
 		d2ev_dbx = 2 * (df_dx * df_db + f * d2f_dbx - \
-		                (df_dx * df_db.mean() - f.mean() * d2f_dbx) / N)
+		                (df_dx * df_db.mean(**dim) - f.mean(**dim) * d2f_dbx) / N)
 
 		# L values
 		d2l_dax = 2 * (dem_dx * dem_da + em * d2em_dax + dev_dx * dev_da + ev * d2ev_dax)
 		d2l_dbx = 2 * (dem_dx * dem_db + em * d2em_dbx + dev_dx * dev_db + ev * d2ev_dbx)
 
-		return grad_output1 * d2l_dax, grad_output2 * d2l_dbx, None, None, None, None, None
+		return grad_output1 * d2l_dax, grad_output2 * d2l_dbx, None, None, None, None, None, None
 		
 
 class GSAB(torch.nn.Module):
@@ -82,8 +87,8 @@ class GSAB(torch.nn.Module):
 		super(GSAB, self).__init__()
 		self.gsab = Gradient_Step_AB.apply
 
-	def forward(self, x, a, b, func, mean, var):
-		return self.gsab(x, x, a, b, func, mean, var)
+	def forward(self, x, a, b, func, mean, var, dim):
+		return self.gsab(x, x, a, b, func, mean, var, dim)
 		
 
 # QUICK TEST
@@ -93,47 +98,49 @@ gsab = GSAB()
 sig = Sigmoid()
 a = torch.ones(1)
 b = torch.zeros(1)
-mean = torch.Tensor([0.1])
-var = torch.Tensor([0.01])
+mean = torch.rand(5,1)
+var = torch.rand(5,1) * 0.1
 lr = torch.ones(1)
 
 # Input data standard normalized
-data = torch.rand(1000)
-data = (data - data.mean()) / (data.std())
+data = torch.rand(5, 1000)
+dim = {'dim': [1], 'keepdim': True}
+data = (data - data.mean(**dim)) / (data.std(**dim))
 
 # Init stats
-mb = sig.f(data, a, b).mean().item()
-vb = sig.f(data, a, b).var(unbiased = False).item()
-print(f'Mean chosen:\t{mean.item()}\t',
-      f'Var chosen: \t{var.item()}')
-print(f'Mean before:\t{mb}\t',
-      f'Var before:\t{vb}')
+mb = sig.f(data, a, b).mean(**dim)
+vb = sig.f(data, a, b).var(unbiased = False, **dim)
+print(f'Mean chosen:\n{mean}\n',
+      f'Var chosen: \n{var}\n')
+print(f'Mean before:\n{mb}\n',
+      f'Var before:\n{vb}\n')
 
 # Track data gradients
 data.requires_grad = True
 
-# Calculate grad descent step w.r.t. a
+# Calculate grad descent step w.r.t. b
 out = gsab(x = data,
            a = a,
            b = b,
            func = sig,
            mean = mean,
-           var = var)
+           var = var,
+           dim = dim)
 
-# Gradient descent step w.r.t. a
+# Gradient descent step w.r.t. b
 a = a - lr * out[0]
 b = b - lr * out[1]
 
 # Calculate gradients w.r.t. data
-out = out[0] + out[1]
+out = out[0].sum() + out[1].sum()
 out.backward()
 
 # After stats (should trend towards the specified mean and var)
 with torch.no_grad():
-	ma = sig.f(data, a, b).mean().item()
-	va = sig.f(data, a, b).var(unbiased = False).item()
-	print(f'Mean after:\t{ma}\t',
-	      f'Var after:\t{va}')
+	ma = sig.f(data, a, b).mean(**dim)
+	va = sig.f(data, a, b).var(unbiased = False, **dim)
+	print(f'Mean after:\n{ma}\n',
+	      f'Var after:\n{va}')
 
 
 ###
