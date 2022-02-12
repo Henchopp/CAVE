@@ -6,12 +6,13 @@ class Newton_Step_B(torch.autograd.Function):
 	"""docstring for Newton_Step_B"""
 
 	@staticmethod
-	def forward(ctx, x, a, b, func, mean):
+	def forward(ctx, x, a, b, func, mean, dim):
 
 		# Save variables for backward
 		ctx.save_for_backward(x, a, b)
 		ctx.func = func
 		ctx.mean = mean
+		ctx.dim = dim
 
 		# f values
 		f = func.f(x, a, b)
@@ -19,9 +20,9 @@ class Newton_Step_B(torch.autograd.Function):
 		d2f_db2 = func.d2f_db2(x, a, b)
 
 		# Em values
-		em = f.mean() - mean
-		dem_db = df_db.mean()
-		d2em_db2 = d2f_db2.mean()
+		em = f.mean(**dim) - mean
+		dem_db = df_db.mean(**dim)
+		d2em_db2 = d2f_db2.mean(**dim)
 
 		# Lm values
 		dlm_db = 2 * em * dem_db
@@ -45,13 +46,17 @@ class Newton_Step_B(torch.autograd.Function):
 		d2f_db2 = ctx.func.d2f_db2(x, a, b)
 		d2f_dbx = ctx.func.d2f_dbx(x, a, b)
 		d3f_db2x = ctx.func.d3f_db2x(x, a, b)
-		N = x.numel()
+		
+		# Get N
+		N = 1
+		for i in ctx.dim['dim']:
+			N *= x.shape[i]
 
 		# Em values
-		em = f.mean() - ctx.mean
-		dem_db = df_db.mean()
+		em = f.mean(**dim) - ctx.mean
+		dem_db = df_db.mean(**dim)
 		dem_dx = df_dx / N
-		d2em_db2 = d2f_db2.mean()
+		d2em_db2 = d2f_db2.mean(**dim)
 		d2em_dbx = d2f_dbx / N
 		d3em_db2x = d3f_db2x / N
 
@@ -64,7 +69,7 @@ class Newton_Step_B(torch.autograd.Function):
 		# Newton step
 		dnb_dx = (d2lm_db2 * d2lm_dbx - dlm_db * d3lm_db2x)
 
-		return grad_output * dnb_dx, None, None, None, None
+		return grad_output * dnb_dx, None, None, None, None, None
 
 
 class NSB(torch.nn.Module):
@@ -74,8 +79,8 @@ class NSB(torch.nn.Module):
 		super(NSB, self).__init__()
 		self.nsb = Newton_Step_B.apply
 
-	def forward(self, x, a, b, func, mean):
-		return self.nsb(x, a, b, func, mean)
+	def forward(self, x, a, b, func, mean, dim):
+		return self.nsb(x, a, b, func, mean, dim)
 	
 
 # QUICK TEST
@@ -85,44 +90,47 @@ nsb = NSB()
 sig = Sigmoid()
 a = torch.ones(1)
 b = torch.zeros(1)
-mean = torch.Tensor([0.1])
+mean = torch.rand(5,1)
 var = torch.Tensor([0.01])
 lr = torch.ones(1)
 
 # Input data standard normalized
-data = torch.rand(1000)
-data = (data - data.mean()) / (data.std())
+data = torch.rand(5, 1000)
+dim = {'dim': [1], 'keepdim': True}
+data = (data - data.mean(**dim)) / (data.std(**dim))
 
 # Init stats
-mb = sig.f(data, a, b).mean().item()
-vb = sig.f(data, a, b).var(unbiased = False).item()
-print(f'Mean chosen:\t{mean.item()}\t',
-      f'Var chosen: \t{var.item()}')
-print(f'Mean before:\t{mb}\t',
-      f'Var before:\t{vb}')
+mb = sig.f(data, a, b).mean(**dim)
+vb = sig.f(data, a, b).var(unbiased = False, **dim)
+print(f'Mean chosen:\n{mean}\n',
+      f'Var chosen: \n{var}\n')
+print(f'Mean before:\n{mb}\n',
+      f'Var before:\n{vb}\n')
 
 # Track data gradients
 data.requires_grad = True
 
-# Calculate grad descent step w.r.t. a
+# Calculate grad descent step w.r.t. b
 out = nsb(x = data,
           a = a,
           b = b,
           func = sig,
-          mean = mean)
+          mean = mean,
+          dim = dim)
 
-# Gradient descent step w.r.t. a
+# Gradient descent step w.r.t. b
 b = b - lr * out
 
 # Calculate gradients w.r.t. data
+out = out.sum()
 out.backward()
 
 # After stats (should trend towards the specified mean and var)
 with torch.no_grad():
-	ma = sig.f(data, a, b).mean().item()
-	va = sig.f(data, a, b).var(unbiased = False).item()
-	print(f'Mean after:\t{ma}\t',
-	      f'Var after:\t{va}')
+	ma = sig.f(data, a, b).mean(**dim)
+	va = sig.f(data, a, b).var(unbiased = False, **dim)
+	print(f'Mean after:\n{ma}\n',
+	      f'Var after:\n{va}')
 
 
 ###
