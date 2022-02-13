@@ -46,12 +46,12 @@ class Gradient_Step_A(torch.autograd.Function):
 			N *= x.shape[i]
 
 		# E values
-		ev = (f ** 2).mean(**dim) - f.mean(**dim) ** 2 - ctx.var
-		dem_da = df_da.mean(**dim)
-		dev_da = 2 * ((f * df_da).mean(**dim) - f.mean(**dim) * dem_da)
-		dev_dx = 2 * df_dx * (f / N - f.mean(**dim))
+		ev = (f ** 2).mean(**ctx.dim) - f.mean(**ctx.dim) ** 2 - ctx.var
+		dem_da = df_da.mean(**ctx.dim)
+		dev_da = 2 * ((f * df_da).mean(**ctx.dim) - f.mean(**ctx.dim) * dem_da)
+		dev_dx = 2 * df_dx * (f / N - f.mean(**ctx.dim))
 		d2ev_dax = 2 * (df_dx * df_da + f * d2f_dax - \
-		                (df_dx * df_da.mean(**dim) - f.mean(**dim) * d2f_dax) / N)
+		                (df_dx * df_da.mean(**ctx.dim) - f.mean(**ctx.dim) * d2f_dax) / N)
 
 		# L value
 		d2lv_dax = 2 * (dev_dx * dev_da + ev * d2ev_dax)

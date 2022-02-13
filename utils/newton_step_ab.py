@@ -78,13 +78,13 @@ class Newton_Step_AB(torch.autograd.Function):
 			N *= x.shape[i]
 
 		# Em values
-		em = f.mean(**dim) - ctx.mean
-		dem_da = df_da.mean(**dim)
-		dem_db = df_db.mean(**dim)
+		em = f.mean(**ctx.dim) - ctx.mean
+		dem_da = df_da.mean(**ctx.dim)
+		dem_db = df_db.mean(**ctx.dim)
 		dem_dx = df_dx / N
-		d2em_da2 = d2f_da2.mean(**dim)
-		d2em_dab = d2f_dab.mean(**dim)
-		d2em_db2 = d2f_db2.mean(**dim)
+		d2em_da2 = d2f_da2.mean(**ctx.dim)
+		d2em_dab = d2f_dab.mean(**ctx.dim)
+		d2em_db2 = d2f_db2.mean(**ctx.dim)
 		d2em_dax = d2f_dax / N
 		d2em_dbx = d2f_dbx / N
 		d3em_da2x = d3f_da2x / N
@@ -92,23 +92,23 @@ class Newton_Step_AB(torch.autograd.Function):
 		d3em_db2x = d3f_db2x / N
 
 		# Ev values
-		ev = (f ** 2).mean(**dim) - f.mean(**dim) ** 2 - ctx.var
-		dev_da = 2 * ((f * df_da).mean(**dim) - f.mean(**dim) * dem_da)
-		dev_db = 2 * ((f * df_db).mean(**dim) - f.mean(**dim) * dem_db)
-		dev_dx = 2 * df_dx * (f / N - f.mean(**dim))
-		d2ev_da2 = 2 * ((df_da ** 2 + f * d2f_da2).mean(**dim) - dem_da ** 2 - f.mean(**dim) * d2em_da2)
-		d2ev_dab = 2 * ((df_da * df_db + f * d2f_dab).mean(**dim) - dem_da * dem_db - f.mean(**dim) * d2em_dab)
-		d2ev_db2 = 2 * ((df_db ** 2 + f * d2f_db2).mean(**dim) - dem_db ** 2 - f.mean(**dim) * d2em_db2)
+		ev = (f ** 2).mean(**ctx.dim) - f.mean(**ctx.dim) ** 2 - ctx.var
+		dev_da = 2 * ((f * df_da).mean(**ctx.dim) - f.mean(**ctx.dim) * dem_da)
+		dev_db = 2 * ((f * df_db).mean(**ctx.dim) - f.mean(**ctx.dim) * dem_db)
+		dev_dx = 2 * df_dx * (f / N - f.mean(**ctx.dim))
+		d2ev_da2 = 2 * ((df_da ** 2 + f * d2f_da2).mean(**ctx.dim) - dem_da ** 2 - f.mean(**ctx.dim) * d2em_da2)
+		d2ev_dab = 2 * ((df_da * df_db + f * d2f_dab).mean(**ctx.dim) - dem_da * dem_db - f.mean(**ctx.dim) * d2em_dab)
+		d2ev_db2 = 2 * ((df_db ** 2 + f * d2f_db2).mean(**ctx.dim) - dem_db ** 2 - f.mean(**ctx.dim) * d2em_db2)
 		d2ev_dax = 2 * (df_dx * df_da + f * d2f_dax - \
-		                (df_dx * df_da.mean(**dim) - f.mean(**dim) * d2f_dax) / N)
+		                (df_dx * df_da.mean(**ctx.dim) - f.mean(**ctx.dim) * d2f_dax) / N)
 		d2ev_dbx = 2 * (df_dx * df_db + f * d2f_dbx - \
-		                (df_dx * df_db.mean(**dim) - f.mean(**dim) * d2f_dbx) / N)
+		                (df_dx * df_db.mean(**ctx.dim) - f.mean(**ctx.dim) * d2f_dbx) / N)
 		d3ev_da2x = 2 * ((2 * df_da * d2f_dax + df_dx * d2f_da2 + f * d3f_da2x) / N - \
-		                 2 * dem_da * d2em_dax - df_dx * d2em_da2 / N - f.mean(**dim) * d3em_da2x)
+		                 2 * dem_da * d2em_dax - df_dx * d2em_da2 / N - f.mean(**ctx.dim) * d3em_da2x)
 		d3ev_dabx = 2 * ((d2f_dax * df_db + df_da * d2f_dbx + df_dx * d2f_dab + f * d3f_dabx) / N - \
-		                 d2em_dax * dem_db - dem_da * d2em_dbx - df_dx * d2em_dab / N - f.mean(**dim) * d3em_dabx)
+		                 d2em_dax * dem_db - dem_da * d2em_dbx - df_dx * d2em_dab / N - f.mean(**ctx.dim) * d3em_dabx)
 		d3ev_db2x = 2 * ((2 * df_db * d2f_dbx + df_dx * d2f_db2 + f * d3f_db2x) / N - \
-		                 2 * dem_db * d2em_dbx - df_dx * d2em_db2 / N - f.mean(**dim) * d3em_db2x)
+		                 2 * dem_db * d2em_dbx - df_dx * d2em_db2 / N - f.mean(**ctx.dim) * d3em_db2x)
 
 		# L values
 		dl_da = 2 * (em * dem_da + ev * dev_da)

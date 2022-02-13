@@ -45,8 +45,8 @@ class Gradient_Step_B(torch.autograd.Function):
 			N *= x.shape[i]
 
 		# E values
-		em = f.mean(**dim) - ctx.mean
-		dem_db = df_db.mean(**dim)
+		em = f.mean(**ctx.dim) - ctx.mean
+		dem_db = df_db.mean(**ctx.dim)
 		dem_dx = df_dx / N
 		d2em_dbx = d2f_dbx / N
 

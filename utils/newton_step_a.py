@@ -57,20 +57,20 @@ class Newton_Step_A(torch.autograd.Function):
 			N *= x.shape[i]
 
 		# Em values
-		dem_da = df_da.mean(**dim)
-		d2em_da2 = d2f_da2.mean(**dim)
+		dem_da = df_da.mean(**ctx.dim)
+		d2em_da2 = d2f_da2.mean(**ctx.dim)
 		d2em_dax = d2f_dax / N
 		d3em_da2x = d3f_da2x / N
 
 		# Ev values
-		ev = (f ** 2).mean(**dim) - f.mean(**dim) ** 2 - ctx.var
-		dev_da = 2 * ((f * df_da).mean(**dim) - f.mean(**dim) * dem_da)
-		dev_dx = 2 * df_dx * (f / N - f.mean(**dim))
-		d2ev_da2 = 2 * ((df_da ** 2 + f * d2f_da2).mean(**dim) - dem_da ** 2 - f.mean(**dim) * d2em_da2)
+		ev = (f ** 2).mean(**ctx.dim) - f.mean(**ctx.dim) ** 2 - ctx.var
+		dev_da = 2 * ((f * df_da).mean(**ctx.dim) - f.mean(**ctx.dim) * dem_da)
+		dev_dx = 2 * df_dx * (f / N - f.mean(**ctx.dim))
+		d2ev_da2 = 2 * ((df_da ** 2 + f * d2f_da2).mean(**ctx.dim) - dem_da ** 2 - f.mean(**ctx.dim) * d2em_da2)
 		d2ev_dax = 2 * (df_dx * df_da + f * d2f_dax - \
-		                (df_dx * dem_da - f.mean(**dim) * d2f_dax) / N)
+		                (df_dx * dem_da - f.mean(**ctx.dim) * d2f_dax) / N)
 		d3ev_da2x = 2 * ((2 * df_da * d2f_dax + df_dx * d2f_da2 + f * d3f_da2x) / N - \
-		                 2 * dem_da * d2em_dax - df_dx * d2em_da2 / N - f.mean(**dim) * d3em_da2x)
+		                 2 * dem_da * d2em_dax - df_dx * d2em_da2 / N - f.mean(**ctx.dim) * d3em_da2x)
 
 		# Lv values
 		dlv_da = 2 * ev * dev_da
