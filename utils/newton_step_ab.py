@@ -1,5 +1,6 @@
 import torch
-from cave_base_functions import Sigmoid, Softplus
+if __name__ == '__main__':
+	from cave_base_functions import Sigmoid, Softplus
 
 
 class Newton_Step_AB(torch.autograd.Function):
@@ -152,55 +153,56 @@ class NSAB(torch.nn.Module):
 
 
 # QUICK TEST
+if __name__ == '__main__':
 
-# Initializations
-nsab = NSAB()
-sig = Sigmoid()
-a = torch.ones(1)
-b = torch.zeros(1)
-mean = torch.rand(5,1)
-var = torch.rand(5,1) * 0.1
-lr = torch.ones(1)
+	# Initializations
+	nsab = NSAB()
+	sig = Sigmoid()
+	a = torch.ones(1)
+	b = torch.zeros(1)
+	mean = torch.rand(5,1)
+	var = torch.rand(5,1) * 0.1
+	lr = torch.ones(1)
 
-# Input data standard normalized
-data = torch.rand(5, 1000)
-dim = {'dim': [1], 'keepdim': True}
-data = (data - data.mean(**dim)) / (data.std(**dim))
+	# Input data standard normalized
+	data = torch.rand(5, 1000)
+	dim = {'dim': [1], 'keepdim': True}
+	data = (data - data.mean(**dim)) / (data.std(**dim))
 
-# Init stats
-mb = sig.f(data, a, b).mean(**dim)
-vb = sig.f(data, a, b).var(unbiased = False, **dim)
-print(f'Mean chosen:\n{mean}\n',
-      f'Var chosen: \n{var}\n')
-print(f'Mean before:\n{mb}\n',
-      f'Var before:\n{vb}\n')
+	# Init stats
+	mb = sig.f(data, a, b).mean(**dim)
+	vb = sig.f(data, a, b).var(unbiased = False, **dim)
+	print(f'Mean chosen:\n{mean}\n',
+	      f'Var chosen: \n{var}\n')
+	print(f'Mean before:\n{mb}\n',
+	      f'Var before:\n{vb}\n')
 
-# Track data gradients
-data.requires_grad = True
+	# Track data gradients
+	data.requires_grad = True
 
-# Calculate grad descent step w.r.t. b
-out = nsab(x = data,
-           a = a,
-           b = b,
-           func = sig,
-           mean = mean,
-           var = var,
-           dim = dim)
+	# Calculate grad descent step w.r.t. b
+	out = nsab(x = data,
+	           a = a,
+	           b = b,
+	           func = sig,
+	           mean = mean,
+	           var = var,
+	           dim = dim)
 
-# Gradient descent step w.r.t. b
-a = a - lr * out[0]
-b = b - lr * out[1]
+	# Gradient descent step w.r.t. b
+	a = a - lr * out[0]
+	b = b - lr * out[1]
 
-# Calculate gradients w.r.t. data
-out = out[0].sum() + out[1].sum()
-out.backward()
+	# Calculate gradients w.r.t. data
+	out = out[0].sum() + out[1].sum()
+	out.backward()
 
-# After stats (should trend towards the specified mean and var)
-with torch.no_grad():
-	ma = sig.f(data, a, b).mean(**dim)
-	va = sig.f(data, a, b).var(unbiased = False, **dim)
-	print(f'Mean after:\n{ma}\n',
-	      f'Var after:\n{va}')
+	# After stats (should trend towards the specified mean and var)
+	with torch.no_grad():
+		ma = sig.f(data, a, b).mean(**dim)
+		va = sig.f(data, a, b).var(unbiased = False, **dim)
+		print(f'Mean after:\n{ma}\n',
+		      f'Var after:\n{va}')
 
 
 ###
