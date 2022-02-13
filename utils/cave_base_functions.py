@@ -80,6 +80,9 @@ class CAVEBaseFunction(ABC):
 class Sigmoid(CAVEBaseFunction):
 	"""docstring for Sigmoid"""
 
+	def __init__(self):
+		super().__init__(low = 0.0, high = 1.0)
+
 	def fx(self, x):
 		return x.sigmoid()
 
@@ -99,6 +102,9 @@ class Sigmoid(CAVEBaseFunction):
 # Softplus function
 class Softplus(CAVEBaseFunction):
 	"""docstring for Softplus"""
+
+	def __init__(self):
+		super().__init__(low = 0.0, high = None)
 
 	def fx(self, x):
 		return softplus(x)
