@@ -1,5 +1,6 @@
 import torch
-from cave_base_functions import Sigmoid
+if __name__ == '__main__':
+	from cave_base_functions import Sigmoid, Softplus
 
 
 class Newton_Step_B(torch.autograd.Function):
