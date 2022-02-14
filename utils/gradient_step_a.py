@@ -7,57 +7,24 @@ class Gradient_Step_A(torch.autograd.Function):
 	"""docstring for Gradient_Step_A"""
 	
 	@staticmethod
-	def forward(ctx, x, a, b, func, var, dim):
+	def forward(ctx, x, a, b, func, var, dim, lr):
 
 		# Save variables for backward
 		ctx.save_for_backward(x, a, b)
 		ctx.func = func
 		ctx.var = var
 		ctx.dim = dim
+		ctx.lr = lr
 
-		# f values
-		f = func.f(x, a, b)
-		df_da = func.df_da(x, a, b)
-
-		# E values
-		dem_da = df_da.mean(**dim)
-		ev = (f ** 2).mean(**dim) - f.mean(**dim) ** 2 - var
-		dev_da = 2 * ((f * df_da).mean(**dim) - f.mean(**dim) * dem_da)
-
-		# L value
-		dlv_da = 2 * ev * dev_da
-
-		return dlv_da
+		return func.Ga(x, a, b, var, dim, lr)
 
 	@staticmethod
 	def backward(ctx, grad_output):
 
 		# Read saved tensors
 		x, a, b = ctx.saved_tensors
-
-		# f values
-		f = ctx.func.f(x, a, b)
-		df_da = ctx.func.df_da(x, a, b)
-		df_dx = ctx.func.df_dx(x, a, b)
-		d2f_dax = ctx.func.d2f_dax(x, a, b)
-
-		# Get N
-		N = 1
-		for i in ctx.dim['dim']:
-			N *= x.shape[i]
-
-		# E values
-		ev = (f ** 2).mean(**ctx.dim) - f.mean(**ctx.dim) ** 2 - ctx.var
-		dem_da = df_da.mean(**ctx.dim)
-		dev_da = 2 * ((f * df_da).mean(**ctx.dim) - f.mean(**ctx.dim) * dem_da)
-		dev_dx = 2 * df_dx * (f / N - f.mean(**ctx.dim))
-		d2ev_dax = 2 * (df_dx * df_da + f * d2f_dax - \
-		                (df_dx * df_da.mean(**ctx.dim) - f.mean(**ctx.dim) * d2f_dax) / N)
-
-		# L value
-		d2lv_dax = 2 * (dev_dx * dev_da + ev * d2ev_dax)
-
-		return grad_output * d2lv_dax, None, None, None, None, None
+		dGa_dx = ctx.func.dGa_dx(x, a, b, ctx.var, ctx.dim, ctx.lr)
+		return grad_output * dGa_dx, None, None, None, None, None, None
 
 
 class GSA(torch.nn.Module):
@@ -67,8 +34,8 @@ class GSA(torch.nn.Module):
 		super(GSA, self).__init__()
 		self.gsa = Gradient_Step_A.apply
 
-	def forward(self, x, a, b, func, var, dim):
-		return self.gsa(x, a, b, func, var, dim)
+	def forward(self, x, a, b, func, var, dim, lr):
+		return self.gsa(x, a, b, func, var, dim, lr)
 		
 
 # QUICK TEST
@@ -105,10 +72,11 @@ if __name__ == '__main__':
 	          b = b,
 	          func = sig,
 	          var = var,
-	          dim = dim)
+	          dim = dim,
+	          lr = lr)
 
 	# Gradient descent step w.r.t. b
-	a = a - lr * out
+	a = a - out
 
 	# Calculate gradients w.r.t. data
 	out = out.sum()
