@@ -7,54 +7,24 @@ class Gradient_Step_B(torch.autograd.Function):
 	"""docstring for Gradient_Step_B"""
 
 	@staticmethod
-	def forward(ctx, x, a, b, func, mean, dim):
+	def forward(ctx, x, a, b, func, mean, dim, lr):
 
 		# Save variables for backward
 		ctx.save_for_backward(x, a, b)
 		ctx.func = func
 		ctx.mean = mean
 		ctx.dim = dim
-
-		# f values
-		f = func.f(x, a, b)
-		df_db = func.df_db(x, a, b)
-
-		# E values
-		em = f.mean(**dim) - mean
-		dem_db = df_db.mean(**dim)
-
-		# L value
-		dlm_db = 2 * em * dem_db
-
-		return dlm_db
+		ctx.lr = lr
+		
+		return func.Gb(x, a, b, mean, dim, lr)
 
 	@staticmethod
 	def backward(ctx, grad_output):
 		
 		# Read saved tensors
 		x, a, b = ctx.saved_tensors
-
-		# f values
-		f = ctx.func.f(x, a, b)
-		df_db = ctx.func.df_db(x, a, b)
-		df_dx = ctx.func.df_dx(x, a, b)
-		d2f_dbx = ctx.func.d2f_dbx(x, a, b)
-
-		# Get N
-		N = 1
-		for i in ctx.dim['dim']:
-			N *= x.shape[i]
-
-		# E values
-		em = f.mean(**ctx.dim) - ctx.mean
-		dem_db = df_db.mean(**ctx.dim)
-		dem_dx = df_dx / N
-		d2em_dbx = d2f_dbx / N
-
-		# L value
-		d2lm_dbx = 2 * (dem_dx * dem_db + em * d2em_dbx)
-
-		return grad_output * d2lm_dbx, None, None, None, None, None
+		dGb_dx = ctx.func.dGb_dx(x, a, b, ctx.mean, ctx.dim, ctx.lr)
+		return grad_output * dGb_dx, None, None, None, None, None, None
 
 
 class GSB(torch.nn.Module):
@@ -64,8 +34,8 @@ class GSB(torch.nn.Module):
 		super(GSB, self).__init__()
 		self.gsb = Gradient_Step_B.apply
 
-	def forward(self, x, a, b, func, mean, dim):
-		return self.gsb(x, a, b, func, mean, dim)
+	def forward(self, x, a, b, func, mean, dim, lr):
+		return self.gsb(x, a, b, func, mean, dim, lr)
 
 
 # QUICK TEST
@@ -102,10 +72,11 @@ if __name__ == '__main__':
 	          b = b,
 	          func = sig,
 	          mean = mean,
-	          dim = dim)
+	          dim = dim,
+	          lr = lr)
 
 	# Gradient descent step w.r.t. b
-	b = b - lr * out
+	b = b - out
 
 	# Calculate gradients w.r.t. data
 	out = out.sum()
