@@ -146,7 +146,7 @@ class CAVEBaseFunction(ABC):
 	# Forward methods
 	def Ev(self, x, a, b, var, dim):
 		f = self.f(x, a, b)
-		return f.var(unbiased = False) - var
+		return f.var(unbiased = False, **dim) - var
 
 	def dEv_da(self, x, a, b, dim):
 		f = self.f(x, a, b)
@@ -186,7 +186,7 @@ class CAVEBaseFunction(ABC):
 		f = self.f(x, a, b)
 		df_dx = self.df_dx(x, a, b)
 		N = self.numel(x.shape, dim)
-		return 2 * df_dx / N * (f - f.mean())
+		return 2 * df_dx / N * (f - f.mean(**dim))
 
 	def d2Ev_dax(self, x, a, b, dim):
 		f = self.f(x, a, b)
