@@ -5,13 +5,15 @@ import time
 import torch
 
 sys.path.append(os.path.dirname(os.getcwd()))
-from utils.cave_base_functions import Sigmoid as SigmoidGT
-from utils.cave_base_functions import Softplus as SoftplusGT
-from utils.cave_base_functions2 import Sigmoid as SigmoidTest
-from utils.cave_base_functions2 import Softplus as SoftplusTest
+from utils.cave_base_functions_notes import Sigmoid as SigmoidGT
+from utils.cave_base_functions_notes import Softplus as SoftplusGT
+from utils.cave_base_functions import Sigmoid as SigmoidTest
+from utils.cave_base_functions import Softplus as SoftplusTest
 
 
 if __name__ == '__main__':
+
+	torch.manual_seed(0)
 
 	# Initializations
 	sig_gt = SigmoidGT()
@@ -53,13 +55,13 @@ if __name__ == '__main__':
 	dim = {'dim': [0,1], 'keepdim': True}
 
 	# Input data (standard normalized)
-	x = torch.rand(1000, 500)
+	x = torch.rand(1000, 10000)
 	x = (x - x.mean(**dim)) / (x.std(**dim))
 
+	print(f'There are {x.numel()} data points')
+	print(f'Function          Time Test  Time Base  Time Diff')
+
 	for f_gt, f_test in sig_pairs:
-		one_out = True
-		if 'Gab' in f_gt.__name__ or 'Nab' in f_gt.__name__:
-			one_out = False
 
 		if 'Gab' in f_gt.__name__:
 			t_gt = time.time()
@@ -110,26 +112,14 @@ if __name__ == '__main__':
 			t_test = time.time() - t_test
 
 		with torch.no_grad():
-			name = f_gt.__name__
-
-			if one_out:
-				name = 'Sigmoid.' + name + ':' + ' ' * (9 - len(name))
-				pe = ((f_test1 - f_gt1) / f_gt1).abs().mean().item()
-				print(f'Mean abs percent error of {name} {pe * 100} | {t_test - t_gt}')
-
-			else:
-				name = 'Sigmoid.' + name + ':' + ' ' * (9 - len(name))
-				pe = ((f_test1 - f_gt1) / f_gt1).abs().mean().item()
-				print(f'Mean abs percent error of {name} {pe * 100} | {t_test - t_gt}')
-
-				pe = ((f_test2 - f_gt2) / f_gt2).abs().mean().item()
-				print(f'Mean abs percent error of {name} {pe * 100} | {t_test - t_gt}')
-
+			name = 'Sigmoid.' + f_gt.__name__
+			name += ' ' * (17 - len(name))
+			td = '{:.8f}'.format(t_test - t_gt)
+			t_gt = '{:.8f}'.format(t_gt)
+			t_test = '{:.8f}'.format(t_test)
+			print(f'{name} {t_test} {t_gt} {td}')
 
 	for f_gt, f_test in sp_pairs:
-		one_out = True
-		if 'Gab' in f_gt.__name__ or 'Nab' in f_gt.__name__:
-			one_out = False
 
 		if 'Gab' in f_gt.__name__:
 			t_gt = time.time()
@@ -180,20 +170,12 @@ if __name__ == '__main__':
 			t_test = time.time() - t_test
 
 		with torch.no_grad():
-			name = f_gt.__name__
-
-			if one_out:
-				name = 'Softplus.' + name + ':' + ' ' * (8 - len(name))
-				pe = ((f_test1 - f_gt1) / f_gt1).abs().mean().item()
-				print(f'Mean abs percent error of {name} {pe * 100} | {t_test - t_gt}')
-
-			else:
-				name = 'Softplus.' + name + ':' + ' ' * (8 - len(name))
-				pe = ((f_test1 - f_gt1) / f_gt1).abs().mean().item()
-				print(f'Mean abs percent error of {name} {pe * 100} | {t_test - t_gt}')
-
-				pe = ((f_test2 - f_gt2) / f_gt2).abs().mean().item()
-				print(f'Mean abs percent error of {name} {pe * 100} | {t_test - t_gt}')
+			name = 'Softplus.' + f_gt.__name__
+			name += ' ' * (17 - len(name))
+			td = '{:.8f}'.format(t_test - t_gt)
+			t_gt = '{:.8f}'.format(t_gt)
+			t_test = '{:.8f}'.format(t_test)
+			print(f'{name} {t_test} {t_gt} {td}')
 
 
 ###
