@@ -9,66 +9,21 @@ from utils.cave_base_functions import Sigmoid, Softplus
 
 if __name__ == '__main__':
 
+	torch.manual_seed(0)
+	torch.autograd.set_detect_anomaly(True)
+
 	# Initializations
 	sig = Sigmoid()
 	sp = Softplus()
 
-	sig_pairs = [[sig.Em, sig.dEm_dx],
-	             [sig.dEm_da, sig.d2Em_dax],
-	             [sig.dEm_db, sig.d2Em_dbx],
-	             [sig.d2Em_da2, sig.d3Em_da2x],
-	             [sig.d2Em_dab, sig.d3Em_dabx],
-	             [sig.d2Em_db2, sig.d3Em_db2x],
-	             [sig.Ev, sig.dEv_dx],
-	             [sig.dEv_da, sig.d2Ev_dax],
-	             [sig.dEv_db, sig.d2Ev_dbx],
-	             [sig.d2Ev_da2, sig.d3Ev_da2x],
-	             [sig.d2Ev_dab, sig.d3Ev_dabx],
-	             [sig.d2Ev_db2, sig.d3Ev_db2x],
-	             [sig.Lm, sig.dLm_dx],
-	             [sig.dLm_da, sig.d2Lm_dax],
-	             [sig.dLm_db, sig.d2Lm_dbx],
-	             [sig.d2Lm_da2, sig.d3Lm_da2x],
-	             [sig.d2Lm_dab, sig.d3Lm_dabx],
-	             [sig.d2Lm_db2, sig.d3Lm_db2x],
-	             [sig.Lv, sig.dLv_dx],
-	             [sig.dLv_da, sig.d2Lv_dax],
-	             [sig.dLv_db, sig.d2Lv_dbx],
-	             [sig.d2Lv_da2, sig.d3Lv_da2x],
-	             [sig.d2Lv_dab, sig.d3Lv_dabx],
-	             [sig.d2Lv_db2, sig.d3Lv_db2x],
-	             [sig.Ga, sig.dGa_dx],
+	sig_pairs = [[sig.Ga, sig.dGa_dx],
 	             [sig.Gb, sig.dGb_dx],
 	             [sig.Gab, sig.dGab_dx],
 	             [sig.Na, sig.dNa_dx],
 	             [sig.Nb, sig.dNb_dx],
 	             [sig.Nab, sig.dNab_dx]]
 
-	sp_pairs = [[sp.Em, sp.dEm_dx],
-	            [sp.dEm_da, sp.d2Em_dax],
-	            [sp.dEm_db, sp.d2Em_dbx],
-	            [sp.d2Em_da2, sp.d3Em_da2x],
-	            [sp.d2Em_dab, sp.d3Em_dabx],
-	            [sp.d2Em_db2, sp.d3Em_db2x],
-	            [sp.Ev, sp.dEv_dx],
-	            [sp.dEv_da, sp.d2Ev_dax],
-	            [sp.dEv_db, sp.d2Ev_dbx],
-	            [sp.d2Ev_da2, sp.d3Ev_da2x],
-	            [sp.d2Ev_dab, sp.d3Ev_dabx],
-	            [sp.d2Ev_db2, sp.d3Ev_db2x],
-	            [sp.Lm, sp.dLm_dx],
-	            [sp.dLm_da, sp.d2Lm_dax],
-	            [sp.dLm_db, sp.d2Lm_dbx],
-	            [sp.d2Lm_da2, sp.d3Lm_da2x],
-	            [sp.d2Lm_dab, sp.d3Lm_dabx],
-	            [sp.d2Lm_db2, sp.d3Lm_db2x],
-	            [sp.Lv, sp.dLv_dx],
-	            [sp.dLv_da, sp.d2Lv_dax],
-	            [sp.dLv_db, sp.d2Lv_dbx],
-	            [sp.d2Lv_da2, sp.d3Lv_da2x],
-	            [sp.d2Lv_dab, sp.d3Lv_dabx],
-	            [sp.d2Lv_db2, sp.d3Lv_db2x],
-	            [sp.Ga, sp.dGa_dx],
+	sp_pairs = [[sp.Ga, sp.dGa_dx],
 	            [sp.Gb, sp.dGb_dx],
 	            [sp.Gab, sp.dGab_dx],
 	            [sp.Na, sp.dNa_dx],
@@ -83,7 +38,7 @@ if __name__ == '__main__':
 	dim = {'dim': [0,1], 'keepdim': True}
 
 	# Input data (standard normalized)
-	x = torch.rand(1000, 500)
+	x = torch.rand(5000, 1000)
 	x = (x - x.mean(**dim)) / (x.std(**dim))
 
 	for f, df_dx in sig_pairs:
@@ -159,17 +114,20 @@ if __name__ == '__main__':
 			name = f.__name__
 
 			if one_out:
-				name = 'Sigmoid.' + name + ':' + ' ' * (9 - len(name))
+				name = 'Sigmoid.' + name + ':' + ' ' * (5 - len(name))
 				pe = ((df_out - xg.grad) / xg.grad).abs().mean().item()
-				print(f'Mean abs percent error of {name} {pe * 100}')
+				pe = '{:e}'.format(pe * 100)
+				print(f'Mean abs percent error of {name} {pe} %')
 
 			else:
-				name = 'Sigmoid.' + name + ':' + ' ' * (9 - len(name))
+				name = 'Sigmoid.' + name + ':' + ' ' * (5 - len(name))
 				pe = ((df_out1 - xg.grad) / xg.grad).abs().mean().item()
-				print(f'Mean abs percent error of {name} (a) {pe * 100}')
+				pe = '{:e}'.format(pe * 100)
+				print(f'Mean abs percent error of {name} {pe} %')
 
 				pe = ((df_out2 - xgg.grad) / xgg.grad).abs().mean().item()
-				print(f'Mean abs percent error of {name} (b) {pe * 100}')
+				pe = '{:e}'.format(pe * 100)
+				print(f'Mean abs percent error of {name} {pe} %')
 
 
 	for f, df_dx in sp_pairs:
@@ -245,17 +203,20 @@ if __name__ == '__main__':
 			name = f.__name__
 
 			if one_out:
-				name = 'Softplus.' + name + ':' + ' ' * (8 - len(name))
+				name = 'Softplus.' + name + ':' + ' ' * (4 - len(name))
 				pe = ((df_out - xg.grad) / xg.grad).abs().mean().item()
-				print(f'Mean abs percent error of {name} {pe * 100}')
+				pe = '{:e}'.format(pe * 100)
+				print(f'Mean abs percent error of {name} {pe} %')
 
 			else:
-				name = 'Softplus.' + name + ':' + ' ' * (8 - len(name))
+				name = 'Softplus.' + name + ':' + ' ' * (4 - len(name))
 				pe = ((df_out1 - xg.grad) / xg.grad).abs().mean().item()
-				print(f'Mean abs percent error of {name} (a) {pe * 100}')
+				pe = '{:e}'.format(pe * 100)
+				print(f'Mean abs percent error of {name} {pe} %')
 
 				pe = ((df_out2 - xgg.grad) / xgg.grad).abs().mean().item()
-				print(f'Mean abs percent error of {name} (b) {pe * 100}')
+				pe = '{:e}'.format(pe * 100)
+				print(f'Mean abs percent error of {name} {pe} %')
 
 
 
