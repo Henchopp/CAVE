@@ -4,7 +4,7 @@ import sys
 import torch
 
 sys.path.append(os.path.dirname(os.getcwd()))
-from cave2 import CAVE
+from cave import CAVE
 from utils.cave_base_functions import Sigmoid
 
 
