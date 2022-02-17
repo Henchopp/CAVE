@@ -1,4 +1,8 @@
+import os
+
+import numpy as np
 import torch
+
 from utils.cave_base_functions import Sigmoid, Softplus
 from utils.gradient_step_a import GSA
 from utils.gradient_step_b import GSB
@@ -11,33 +15,56 @@ from utils.newton_step_ab import NSAB
 class CAVE(torch.nn.Module):
 	"""docstring for CAVE"""
 
-	def __init__(self, n_step_gd, n_step_nm, lr_gd, lr_nm,
-	             adam = False, a_init = 1.0, b_init = 0.0):
+	def __init__(self, func, n_step_gd = 10, n_step_nm = 5, lr_gd = 1.0, lr_nm = 1.0,
+	             a_init = 1.0, b_init = 0.0, output_log = False):
 		super(CAVE, self).__init__()
 
-		# Initializing activation functions
-		self.softplus = Softplus()
-		self.sigmoid = Sigmoid()
+		# Initialize activation functions
+		self.func = func
+		if func is None:
+			self.func = Sigmoid()
 
-		# Initializing variables to save
-		self.a = a_init
-		self.b = b_init
+		# Initialize variables to save
 		self.n_step_gd = n_step_gd
 		self.n_step_nm = n_step_nm
 		self.lr_gd = lr_gd
 		self.lr_nm = lr_nm
-		self.adam = adam
+		self.a_init = torch.Tensor([a_init]) if not isinstance(a_init, torch.Tensor) else a_init
+		self.b_init = torch.Tensor([b_init]) if not isinstance(b_init, torch.Tensor) else b_init
+
+		# Initialize gradient/newton steps
+		self.gsa = GSA()
+		self.gsb = GSB()
+		self.gsab = GSAB()
+		self.nsa = NSA()
+		self.nsb = NSB()
+		self.nsab = NSAB()
+
+		# Output log
+		self.log = output_log
+		if output_log:
+			self.log = []
+			self.log_dir = os.path.join(os.path.dirname(os.getcwd()),
+			                            'matlab',
+			                            'output_logs',
+			                            output_log)
+			if not os.path.exists(self.log_dir):
+				os.makedirs(self.log_dir)
+			self.log.append([n_step_gd, n_step_nm])
 
 
 	# Basic transforms
-	def opt_none(self, x):
-		return x
-
 	def opt_low(self, x, low):
-		return self.softplus.fx(x) + low
+		if self.func.low:
+			return self.func.fx(x) - self.func.low + low
+		elif self.func.high:
+			return -1.0 * (self.func.fx(x) - self.func.high) + low
 
 	def opt_high(self, x, high):
-		return -self.softplus.fx(x) + high
+		if self.func.low:
+			return -1.0 * (self.func.fx(x) - self.func.low) + high
+		elif self.func.high:
+			return self.func.fx(x) - self.func.high + high
 
 	def opt_mean(self, x, mean, dim):
 		return x - x.mean(**dim) + mean
@@ -46,197 +73,127 @@ class CAVE(torch.nn.Module):
 		return (var / x.var(unbiased = False, **dim)).sqrt() * x
 
 	def opt_range(self, x, low, high):
-		return (high - low) * self.sigmoid.fx(x) + low
+		if self.func.low and self.func.high:
+			rng = self.func.high - self.func.low
+			return (high - low) * (self.func.fx(x) - self.func.low) / rng + low
 
 	def opt_moments(self, x, mean, var, dim):
 		return (var / x.var(unbiased = False, **dim)).sqrt() * (x - x.mean(**dim)) + mean
 
 
-	# CAVE Processing
-	def cave_preprocess(self, x, low, high, mean, var):
-		return
-
-	def cave_postprocess(self, x, low, high, mean, var):
-		return
-
-
 	# CAVE transforms
-	def opt_grad_mean(self, x, params):
+	def opt_grad_mean(self, x, a, b, low, high, mean, var, dim):
+		db = self.gsb(x, a, b, self.func, mean, dim, self.lr_gd)
+		return None, db
 
-		gd_step = GSB()
+	def opt_grad_var(self, x, a, b, low, high, mean, var, dim):
+		da = self.gsa(x, a, b, self.func, var, dim, self.lr_gd)
+		return da, None
 
-		# performing gradient descent
-		for i in range(self.n_step_gd):
-			self.b = self.b - gd_step(x, self.a, self.b, self.softplus, params["mean"], dim, self.lr_gd)
+	def opt_grad_joint(self, x, a, b, low, high, mean, var, dim):
+		da, db = self.gsab(x, a, b, self.func, mean, var, dim, self.lr_gd)
+		return da, db
 
-	def opt_grad_var(self, x, params):
-		gd_step = GSA()
+	def opt_newton_mean(self, x, a, b, low, high, mean, var, dim):
+		db = self.nsb(x, a, b, self.func, mean, dim, self.lr_nm)
+		return None, db
 
-		# performing newton's method
-		for i in range(self.n_step_gd):
-			self.a = self.a - gd_step(x, self.a, self.b, self.softplus, params["var"], dim, self.lr_gd)
+	def opt_newton_var(self, x, a, b, low, high, mean, var, dim):
+		da = self.nsa(x, a, b, self.func, var, dim, self.lr_nm)
+		return da, None
 
-	def opt_grad_joint(self, x, params):
-		gd_step = GSAB()
+	def opt_newton_joint(self, x, a, b, low, high, mean, var, dim):
+		da, db = self.nsab(x, a, b, self.func, mean, var, dim, self.lr_nm)
+		return da, db
 
-		# performing newton's method
-		for i in range(self.n_step_gd):
-			a, b = gd_step(x, self.a, self.b, self.softplus, params["var"], dim, self.lr_gd)
-			self.a = self.a - a
-			self.b = self.b - b
+	def opt_cave(self, x, low, high, mean, var, dim):
 
-	def opt_newton_mean(self, x, params):
+		# Select optimization methods
+		if mean and var:
+			func_gd = self.opt_grad_joint
+			func_nm = self.opt_newton_joint
+		elif mean:
+			func_gd = self.opt_grad_mean
+			func_nm = self.opt_newton_mean
+		elif var:
+			func_gd = self.opt_grad_var
+			func_nm = self.opt_newton_var
 
-		nm_step = NSB()
+		# Initialize a and b
+		a = self.a_init
+		b = self.b_init
 
-		# performing newton's method
-		for i in range(self.n_step_nm):
-			self.b = self.b - nm_step(x, self.a, self.b, self.softplus, parans["mean"], dim, self.lr_nm)
+		# Standard normalize input
+		x = (x - x.mean(**dim)) / x.std(**dim)
 
-	def opt_newton_var(self, x, params):
-		nm_step = NSA()
+		# Gradient descent
+		for _ in range(self.n_step_gd):
+			da, db = func_gd(x, a, b, low, high, mean, var, dim)
+			if da:
+				a = a - da
+			if db:
+				b = b - db
 
-		# performing newton's method
-		for i in range(self.n_step_nm):
-			self.a = self.a - nm_step(x, self.a, self.b, self.softplus, params["var"], dim, self.lr_nm)
+			if self.log:
+				self.log.append([a.item(), b.item()])
 
-	def opt_newton_joint(self, x, params):
-		nm_step = NSAB()
+		# Newton's method
+		for _ in range(self.n_step_nm):
+			da, db = func_nm(x, a, b, low, high, mean, var, dim)
+			if da:
+				a = a - da
+			if db:
+				b = b - db
 
-		# performing newton's method
-		for i in range(self.n_step_nm):
-			a, b = nm_step(x, self.a, self.b, self.softplus, params["var"], dim, self.lr_nm)
-			self.a = self.a - a,
-			self.b = self.b - b
+			if self.log:
+				self.log.append([a.item(), b.item()])
 
-	def opt_cave(self, x, low, high, mean, var):
+		if self.log:
+			np.savetxt(os.path.join(self.log_dir, 'ab.csv'),
+			           np.array(self.log),
+			           delimiter = ',')
+			np.savetxt(os.path.join(self.log_dir, 'x.csv'),
+			           x.view(-1, 1).numpy())
 
-		def compute_function(activ_var, low, high):
-
-			if(high is not None and low is not None):
-				return (high - low) * self.sigmoid(activ_var) + low
-			elif(high is not None and low is None):
-				return -self.softplus(activ_var) + high
-			else:
-				return self.softplus(activ_var) + low
-
-		case = int("".join(
-		str(1 if c == True else 0)
-		for c in reversed([low != None, high != None, mean != None, var != None])
-		), 2)
-
-		# defining params
-		params = { "mean": mean, "var": var, "low": low, "high": high }
-
-		ret_func = None
-
-		if(case >= 5 and case <= 7):
-			# gradient descent
-			self.opt_grad_mean(x, params)
-			# newton's method
-			self.opt_newton_mean(x, params)
-
-			return compute_function(x + self.b, low, high)
-
-		elif(case >= 9 and case <= 11):
-			# gradient descent
-			self.opt_grad_var(x, params)
-			# newton's method
-			self.opt_newton_var(x, params)
-
-			return compute_function(self.a * x, low, high)
-		elif(case >= 13 and case <= 15):
-			# gradient descent
-			self.opt_grad_joint(x, params)
-			# newton's method
-			self.opt_newton_joint(x, params)
-
-			return compute_function(self.a * x + self.b, low, high)
+		return self.func.fx(a * x + b)
 
 
 	# Forward
-	def forward(self, x, low = None, high = None, mean = None, var = None):
+	def forward(self, x, low = None, high = None, mean = None, var = None, dim = None):
 
-		case = int("".join(
-		str(1 if c == True else 0)
-		for c in reversed([low != None, high != None, mean != None, var != None])
-		), 2)
+		# Log input
+		if isinstance(self.log, list):
+			if mean is not None and var is not None:
+				self.log.append([mean, var])
+			elif mean is not None:
+				self.log.append([mean, float('nan')])
+			else:
+				self.log.append([float('nan'), var])
+			self.log.append([self.a_init.item(), self.b_init.item()])
 
-		opt_fcns = {
-			0: self.opt_none,
-			1: self.opt_low,
-			2: self.opt_high,
-			3: self.opt_range,
-			4: self.opt_mean,
-			5: self.opt_cave, # mean and low,
-			6: self.opt_cave, # mean and high,
-			7: self.opt_cave, # mean and range,
-			8: self.opt_var,
-			9: self.opt_cave, # var and low,
-			10: self.opt_cave, # var and high,
-			11: self.opt_cave, # var and range,
-			12: self.opt_moments,
-			13: self.opt_cave, # moments and low,
-			14: self.opt_cave, # moments and high,
-			15: self.opt_cave, # everything
-		}
+		# Dimension processing
+		if dim is None:
+			dim = [i for i in range(x.ndim)]
+		elif isinstance(dim, int):
+			dim = [dim]
+		dim = {'dim': dim, 'keepdim': True}
 
-		return opt_fcns[case]
+		# Select CAVE method
+		if (low or high) and (mean or var):
+			return self.opt_cave(x, low, high, mean, var, dim)
+		elif low and high:
+			return self.opt_range(x, low, high)
+		elif low:
+			return self.opt_low(x, low)
+		elif high:
+			return self.opt_high(x, high)
+		elif mean and var:
+			return self.opt_moments(x, mean, var, dim)
+		elif mean:
+			return self.opt_mean(x, mean, dim)
+		elif var:
+			return self.opt_var(x, var, dim)
+		return x
 
-
-'''
-INPUT VARIABLES for CAVE
-
-forward
--	low = None
--	high = None
--	mean = None
--	var = None
-
-__init__
--	a_init = 1.0
--	b_init = 0.0
--	n_step_gd
--	n_step_nm
--	lr_gd
--	lr_nm
--	adam = False
-
-
-USAGE (CAVE)
-cave = CAVE(init params)
-data = torch.rand(100)
-mean = torch.Tensor([0.1])
-var = torch.Tensor([0.05])
-low = torch.zeros(1)
-high = torch.ones(1)
-output = cave(...) # arguments are forward method
-
-
-USAGE (opt_all: standard gradient descent)
-gsa = GSA()
-gsb = GSB()
-nsa = NSA()
-nsb = NSB()
-data = torch.rand(100)
-mean = 0.1
-var = 0.05
-low = 0.0
-high = 1.0
-
-# See files for argument usage
-gsa_out = gsa(...)
-gsb_out = gsb(...)
-nsa_out = nsa(...)
-nsb_out = nsb(...)
-
-if gradient descent:
-	a -= lr_gd * gsa_out
-	b -= lr_gd * gsb_out
-
-elif newton's method:
-	a -= lr_nm * nsa_out
-	b -= lr_nm * nsb_out
-'''
 
 ###
