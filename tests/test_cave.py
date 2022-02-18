@@ -5,7 +5,7 @@ import torch
 
 sys.path.append(os.path.dirname(os.getcwd()))
 from cave import CAVE
-from utils.cave_base_functions import Sigmoid, Softplus, ReLU
+from utils.cave_base_functions import Sigmoid, Softplus
 
 
 if __name__ == '__main__':
@@ -18,7 +18,7 @@ if __name__ == '__main__':
 	sparse = True
 
 	n_gd = 10
-	n_nm = 15
+	n_nm = 10
 	lr_gd = 2.0
 	lr_nm = 1.0
 
