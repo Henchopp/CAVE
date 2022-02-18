@@ -106,7 +106,7 @@ class CAVE(torch.nn.Module):
 		da, db = self.nsab(x, a, b, self.func, mean, var, dim, self.lr_nm)
 		return da, db
 
-	def opt_cave(self, x, low, high, mean, var, dim):
+	def opt_cave(self, x, low, high, mean, var, sparse, dim):
 
 		# Select optimization methods
 		if mean and var:
@@ -125,6 +125,18 @@ class CAVE(torch.nn.Module):
 
 		# Standard normalize input
 		x = (x - x.mean(**dim)) / x.std(**dim)
+
+		# Spread data if sparse output required
+		if sparse:
+			if mean > 0.5:
+				x = (x - x.std(**dim) - 1) ** 3
+				x = (x - x.mean(**dim)) / x.std(**dim)
+				x = x + x.std(**dim)
+			else:
+				x = (x + x.std(**dim) + 1) ** 3
+				x = (x - x.mean(**dim)) / x.std(**dim)
+				x = x - x.std(**dim)
+
 
 		# Gradient descent
 		for _ in range(self.n_step_gd):
@@ -153,13 +165,13 @@ class CAVE(torch.nn.Module):
 			           np.array(self.log),
 			           delimiter = ',')
 			np.savetxt(os.path.join(self.log_dir, 'x.csv'),
-			           x.view(-1, 1).numpy())
+			           x.view(-1, 1).detach().numpy())
 
 		return self.func.fx(a * x + b)
 
 
 	# Forward
-	def forward(self, x, low = None, high = None, mean = None, var = None, dim = None):
+	def forward(self, x, low = None, high = None, mean = None, var = None, sparse = False, dim = None):
 
 		# Log input
 		if isinstance(self.log, list):
@@ -180,7 +192,7 @@ class CAVE(torch.nn.Module):
 
 		# Select CAVE method
 		if (low or high) and (mean or var):
-			return self.opt_cave(x, low, high, mean, var, dim)
+			return self.opt_cave(x, low, high, mean, var, sparse, dim)
 		elif low and high:
 			return self.opt_range(x, low, high)
 		elif low:
