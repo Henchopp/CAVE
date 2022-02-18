@@ -8,6 +8,7 @@ The basis of CAVE is finding a linear transform of the input data prior to feedi
 CAVE solves
 - *target_mean = mean(f(aX + b))* and
 - *target_var = var(f(aX + b))*
+
 for variables *a* and *b* using a combination of gradient descent and Newton's method.
 
 CAVE optimization can be used during training of neural networks.
@@ -86,7 +87,7 @@ class MyCAVENetwork(nn.Module):
 
 It's easy to create new base functions for CAVE applications.
 To do so, you must create a class that inherits `CAVEBaseFunction` from `cave_base_functions.py`.
-All you need to provide are methods for the function and its first three derivatives.
+All you need to provide are methods for the function and its first three derivatives as well as the minimum and maximum values of the function's range.
 
 ### Example
 
@@ -100,6 +101,10 @@ You should *not* take into consideration the linear transform as it has been imp
 For example, sigmoid is implemented in `cave_base_functions.py` simply as
 ```
 class Sigmoid(CAVEBaseFunction):
+
+	# Initialization
+	def __init__(self):
+		super().__init__(low = 0.0, high = 1.0)
 
 	# Function
 	def fx(self, x):
