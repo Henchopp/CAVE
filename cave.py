@@ -4,12 +4,7 @@ import numpy as np
 import torch
 
 from utils.cave_base_functions import Sigmoid, Softplus
-from utils.gradient_step_a import GSA
-from utils.gradient_step_b import GSB
-from utils.gradient_step_ab import GSAB
-from utils.newton_step_a import NSA
-from utils.newton_step_b import NSB
-from utils.newton_step_ab import NSAB
+from utils.cave_steps import GSA, GSB, GSAB, NSA, NSB, NSAB
 
 
 class CAVE(torch.nn.Module):
