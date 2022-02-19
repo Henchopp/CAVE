@@ -136,9 +136,9 @@ class CAVE(torch.nn.Module):
 		# Gradient descent
 		for _ in range(self.n_step_gd):
 			da, db = func_gd(x, a, b, low, high, mean, var, dim)
-			if da:
+			if da is not None:
 				a = a - da
-			if db:
+			if db is not None:
 				b = b - db
 
 			if self.log:
@@ -147,9 +147,9 @@ class CAVE(torch.nn.Module):
 		# Newton's method
 		for _ in range(self.n_step_nm):
 			da, db = func_nm(x, a, b, low, high, mean, var, dim)
-			if da:
+			if da is not None:
 				a = a - da
-			if db:
+			if db is not None:
 				b = b - db
 
 			if self.log:
