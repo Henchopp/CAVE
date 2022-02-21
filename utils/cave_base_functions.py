@@ -172,7 +172,7 @@ class CAVEBaseFunction(ABC):
 		                dEm_da ** 2 - fmean * d2f_da2.mean(**dim))
 
 		dLv_da = 2 * Ev * dEv_da
-		d2Lv_da2 = 2 * (dEv_da ** 2 + Ev * d2Ev_da2)
+		d2Lv_da2 = 2 * (dEv_da ** 2 + Ev * d2Ev_da2) + 1e-30
 
 		return lr * dLv_da / d2Lv_da2
 
@@ -181,7 +181,7 @@ class CAVEBaseFunction(ABC):
 		dEm_db = self.dfx(a * x + b).mean(**dim)
 
 		dLm_db = 2 * Em * dEm_db
-		d2Lm_db2 = 2 * (dEm_db ** 2 + Em * self.d2fx(a * x + b).mean(**dim))
+		d2Lm_db2 = 2 * (dEm_db ** 2 + Em * self.d2fx(a * x + b).mean(**dim)) + 1e-30
 
 		return lr * dLm_db / d2Lm_db2
 
@@ -221,7 +221,7 @@ class CAVEBaseFunction(ABC):
 
 		Na = dL_da * d2L_db2 - dL_db * d2L_dab
 		Nb = dL_db * d2L_da2 - dL_da * d2L_dab
-		D = d2L_da2 * d2L_db2 - d2L_dab ** 2
+		D = d2L_da2 * d2L_db2 - d2L_dab ** 2 + 1e-30
 
 		return lr * Na / D, lr * Nb / D
 
@@ -260,7 +260,7 @@ class CAVEBaseFunction(ABC):
 		d2Lv_dax = 2 * (dEv_da * dEv_dx + Ev * d2Ev_dax)
 		d3Lv_da2x = 2 * (2 * dEv_da * d2Ev_dax + dEv_dx * d2Ev_da2 + Ev * d3Ev_da2x)
 
-		return lr * (d2Lv_da2 * d2Lv_dax - dLv_da * d3Lv_da2x) / (d2Lv_da2 ** 2)
+		return lr * (d2Lv_da2 * d2Lv_dax - dLv_da * d3Lv_da2x) / (d2Lv_da2 ** 2 + 1e-30)
 
 	def dNb_dx(self, x, a, b, mean, dim, lr):
 		N = self.numel(x.shape, dim)
@@ -280,7 +280,7 @@ class CAVEBaseFunction(ABC):
 		d2Lm_dbx = 2 * (dEm_db * dEm_dx + Em * d2Em_dbx)
 		d3Lm_db2x = 2 * (2 * dEm_db * d2Em_dbx + dEm_dx * d2Em_db2 + Em * d3Em_db2x)
 
-		return lr * (d2Lm_db2 * d2Lm_dbx - dLm_db * d3Lm_db2x) / (d2Lm_db2 ** 2)
+		return lr * (d2Lm_db2 * d2Lm_dbx - dLm_db * d3Lm_db2x) / (d2Lm_db2 ** 2 + 1e-30)
 
 	def dNab_dx(self, x, a, b, mean, var, dim, lr):
 		N = self.numel(x.shape, dim)
@@ -361,8 +361,8 @@ class CAVEBaseFunction(ABC):
 		dNb_dx = d2L_dbx * d2L_da2 + dL_db * d3L_da2x - d2L_dax * d2L_dab - dL_da * d3L_dabx
 		dD_dx = d3L_da2x * d2L_db2 + d3L_db2x * d2L_da2 - 2 * d2L_dab * d3L_dabx
 
-		dNa_dx = (D * dNa_dx - Na * dD_dx) / (D ** 2)
-		dNb_dx = (D * dNb_dx - Nb * dD_dx) / (D ** 2)
+		dNa_dx = (D * dNa_dx - Na * dD_dx) / (D ** 2 + 1e-30)
+		dNb_dx = (D * dNb_dx - Nb * dD_dx) / (D ** 2 + 1e-30)
 
 		return lr * dNa_dx, lr * dNb_dx
 
