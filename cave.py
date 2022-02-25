@@ -27,6 +27,10 @@ class CAVE(torch.nn.Module):
 		self.a_init = torch.Tensor([a_init]) if not isinstance(a_init, torch.Tensor) else a_init
 		self.b_init = torch.Tensor([b_init]) if not isinstance(b_init, torch.Tensor) else b_init
 
+		# Convert to parameters
+		self.a_init = torch.nn.Parameter(self.a_init)
+		self.b_init = torch.nn.Parameter(self.b_init)
+
 		# Initialize gradient/newton steps
 		self.gsa = GSA()
 		self.gsb = GSB()
