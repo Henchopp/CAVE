@@ -9,7 +9,12 @@ class Gradient_Step_A(torch.autograd.Function):
 	"""docstring for Gradient_Step_A"""
 	
 	@staticmethod
-	def forward(ctx, x, a, b, func, var, dim, lr):
+	def forward(ctx, x, a, b, func, var, dim, unbiased, lr):
+
+		# Adjust variance
+		if unbiased:
+			N = func.numel(x.shape, dim)
+			var = var * (N - 1.0) / N
 
 		# Save variables for backward
 		ctx.save_for_backward(x, a, b)
@@ -36,8 +41,8 @@ class GSA(torch.nn.Module):
 		super(GSA, self).__init__()
 		self.gsa = Gradient_Step_A.apply
 
-	def forward(self, x, a, b, func, var, dim, lr):
-		return self.gsa(x, a, b, func, var, dim, lr)
+	def forward(self, x, a, b, func, var, dim, unbiased, lr):
+		return self.gsa(x, a, b, func, var, dim, unbiased, lr)
 
 
 class Gradient_Step_B(torch.autograd.Function):
@@ -79,7 +84,12 @@ class Gradient_Step_AB(torch.autograd.Function):
 	"""docstring for Gradient_Step_AB"""
 	
 	@staticmethod
-	def forward(ctx, x, x_copy, a, b, func, mean, var, dim, lr):
+	def forward(ctx, x, x_copy, a, b, func, mean, var, dim, unbiased, lr):
+
+		# Adjust variance
+		if unbiased:
+			N = func.numel(x.shape, dim)
+			var = var * (N - 1.0) / N
 		
 		# Save variables for backward
 		ctx.save_for_backward(x, a, b)
@@ -107,8 +117,8 @@ class GSAB(torch.nn.Module):
 		super(GSAB, self).__init__()
 		self.gsab = Gradient_Step_AB.apply
 
-	def forward(self, x, a, b, func, mean, var, dim, lr):
-		return self.gsab(x, x, a, b, func, mean, var, dim, lr)
+	def forward(self, x, a, b, func, mean, var, dim, unbiased, lr):
+		return self.gsab(x, x, a, b, func, mean, var, dim, unbiased, lr)
 
 
 ###########################################
@@ -119,7 +129,12 @@ class Newton_Step_A(torch.autograd.Function):
 	"""docstring for Newton_Step_A"""
 
 	@staticmethod
-	def forward(ctx, x, a, b, func, var, dim, lr):
+	def forward(ctx, x, a, b, func, var, dim, unbiased, lr):
+
+		# Adjust variance
+		if unbiased:
+			N = func.numel(x.shape, dim)
+			var = var * (N - 1.0) / N
 
 		# Save variables for backward
 		ctx.save_for_backward(x, a, b)
@@ -146,8 +161,8 @@ class NSA(torch.nn.Module):
 		super(NSA, self).__init__()
 		self.nsa = Newton_Step_A.apply
 
-	def forward(self, x, a, b, func, var, dim, lr):
-		return self.nsa(x, a, b, func, var, dim, lr)
+	def forward(self, x, a, b, func, var, dim, unbiased, lr):
+		return self.nsa(x, a, b, func, var, dim, unbiased, lr)
 
 
 class Newton_Step_B(torch.autograd.Function):
@@ -189,7 +204,12 @@ class Newton_Step_AB(torch.autograd.Function):
 	"""docstring for Newton_Step_AB"""
 
 	@staticmethod
-	def forward(ctx, x, x_copy, a, b, func, mean, var, dim, lr):
+	def forward(ctx, x, x_copy, a, b, func, mean, var, dim, unbiased, lr):
+
+		# Adjust variance
+		if unbiased:
+			N = func.numel(x.shape, dim)
+			var = var * (N - 1.0) / N
 
 		# Save variables for backward
 		ctx.save_for_backward(x, a, b)
@@ -217,8 +237,8 @@ class NSAB(torch.nn.Module):
 		super(NSAB, self).__init__()
 		self.nsab = Newton_Step_AB.apply
 
-	def forward(self, x, a, b, func, mean, var, dim, lr):
-		return self.nsab(x, x, a, b, func, mean, var, dim, lr)
+	def forward(self, x, a, b, func, mean, var, dim, unbiased, lr):
+		return self.nsab(x, x, a, b, func, mean, var, dim, unbiased, lr)
 
 
 ###

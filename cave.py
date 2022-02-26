@@ -68,44 +68,44 @@ class CAVE(torch.nn.Module):
 	def opt_mean(self, x, mean, dim):
 		return x - x.mean(**dim) + mean
 
-	def opt_var(self, x, var, dim):
-		return (var / x.var(unbiased = False, **dim)).sqrt() * x
+	def opt_var(self, x, var, dim, unbiased):
+		return (var / x.var(unbiased = unbiased, **dim)).sqrt() * x
 
 	def opt_range(self, x, low, high):
 		if self.func.low and self.func.high:
 			rng = self.func.high - self.func.low
 			return (high - low) * (self.func.fx(x) - self.func.low) / rng + low
 
-	def opt_moments(self, x, mean, var, dim):
-		return (var / x.var(unbiased = False, **dim)).sqrt() * (x - x.mean(**dim)) + mean
+	def opt_moments(self, x, mean, var, dim, unbiased):
+		return (var / x.var(unbiased = unbiased, **dim)).sqrt() * (x - x.mean(**dim)) + mean
 
 
 	# CAVE transforms
-	def opt_grad_mean(self, x, a, b, low, high, mean, var, dim):
+	def opt_grad_mean(self, x, a, b, low, high, mean, var, dim, unbiased):
 		db = self.gsb(x, a, b, self.func, mean, dim, self.lr_gd)
 		return None, db
 
-	def opt_grad_var(self, x, a, b, low, high, mean, var, dim):
-		da = self.gsa(x, a, b, self.func, var, dim, self.lr_gd)
+	def opt_grad_var(self, x, a, b, low, high, mean, var, dim, unbiased):
+		da = self.gsa(x, a, b, self.func, var, dim, unbiased, self.lr_gd)
 		return da, None
 
-	def opt_grad_joint(self, x, a, b, low, high, mean, var, dim):
-		da, db = self.gsab(x, a, b, self.func, mean, var, dim, self.lr_gd)
+	def opt_grad_joint(self, x, a, b, low, high, mean, var, dim, unbiased):
+		da, db = self.gsab(x, a, b, self.func, mean, var, dim, unbiased, self.lr_gd)
 		return da, db
 
-	def opt_newton_mean(self, x, a, b, low, high, mean, var, dim):
+	def opt_newton_mean(self, x, a, b, low, high, mean, var, dim, unbiased):
 		db = self.nsb(x, a, b, self.func, mean, dim, self.lr_nm)
 		return None, db
 
-	def opt_newton_var(self, x, a, b, low, high, mean, var, dim):
-		da = self.nsa(x, a, b, self.func, var, dim, self.lr_nm)
+	def opt_newton_var(self, x, a, b, low, high, mean, var, dim, unbiased):
+		da = self.nsa(x, a, b, self.func, var, dim, unbiased, self.lr_nm)
 		return da, None
 
-	def opt_newton_joint(self, x, a, b, low, high, mean, var, dim):
-		da, db = self.nsab(x, a, b, self.func, mean, var, dim, self.lr_nm)
+	def opt_newton_joint(self, x, a, b, low, high, mean, var, dim, unbiased):
+		da, db = self.nsab(x, a, b, self.func, mean, var, dim, unbiased, self.lr_nm)
 		return da, db
 
-	def opt_cave(self, x, low, high, mean, var, sparse, dim):
+	def opt_cave(self, x, low, high, mean, var, sparse, dim, unbiased):
 
 		# Select optimization methods
 		if mean and var:
@@ -169,7 +169,7 @@ class CAVE(torch.nn.Module):
 
 		# Gradient descent
 		for _ in range(self.n_step_gd):
-			da, db = func_gd(x, a, b, low, high, mean, var, dim)
+			da, db = func_gd(x, a, b, low, high, mean, var, dim, unbiased)
 			if da is not None:
 				a = a - da
 			if db is not None:
@@ -180,7 +180,7 @@ class CAVE(torch.nn.Module):
 
 		# Newton's method
 		for _ in range(self.n_step_nm):
-			da, db = func_nm(x, a, b, low, high, mean, var, dim)
+			da, db = func_nm(x, a, b, low, high, mean, var, dim, unbiased)
 			if da is not None:
 				a = a - da
 			if db is not None:
@@ -218,7 +218,8 @@ class CAVE(torch.nn.Module):
 
 
 	# Forward
-	def forward(self, x, low = None, high = None, mean = None, var = None, sparse = False, dim = None):
+	def forward(self, x, low = None, high = None, mean = None, var = None,
+	            sparse = False, dim = None, unbiased = True):
 
 		# Log input
 		if isinstance(self.log, list):
@@ -239,7 +240,7 @@ class CAVE(torch.nn.Module):
 
 		# Select CAVE method
 		if (low != None or high != None) and (mean != None or var != None):
-			return self.opt_cave(x, low, high, mean, var, sparse, dim)
+			return self.opt_cave(x, low, high, mean, var, sparse, dim, unbiased)
 		elif low != None and high != None:
 			return self.opt_range(x, low, high)
 		elif low != None:
@@ -247,11 +248,11 @@ class CAVE(torch.nn.Module):
 		elif high != None:
 			return self.opt_high(x, high)
 		elif mean != None and var != None:
-			return self.opt_moments(x, mean, var, dim)
+			return self.opt_moments(x, mean, var, dim, unbiased)
 		elif mean != None:
 			return self.opt_mean(x, mean, dim)
 		elif var != None:
-			return self.opt_var(x, var, dim)
+			return self.opt_var(x, var, dim, unbiased)
 		return x
 
 
