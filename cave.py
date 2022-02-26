@@ -10,7 +10,7 @@ from utils.cave_steps import GSA, GSB, GSAB, NSA, NSB, NSAB
 class CAVE(torch.nn.Module):
 	"""docstring for CAVE"""
 
-	def __init__(self, func, n_step_gd = 10, n_step_nm = 5, lr_gd = 1.0, lr_nm = 1.0,
+	def __init__(self, func, n_step_gd = 10, n_step_nm = 20, lr_gd = 2.0, lr_nm = 1.0,
 	             a_init = 1.0, b_init = 0.0, output_log = False):
 		super(CAVE, self).__init__()
 
@@ -28,8 +28,8 @@ class CAVE(torch.nn.Module):
 		self.b_init = torch.Tensor([b_init]) if not isinstance(b_init, torch.Tensor) else b_init
 
 		# Convert to parameters
-		self.a_init = torch.nn.Parameter(self.a_init)
-		self.b_init = torch.nn.Parameter(self.b_init)
+		self.a_init = torch.nn.Parameter(self.a_init, requires_grad = False)
+		self.b_init = torch.nn.Parameter(self.b_init, requires_grad = False)
 
 		# Initialize gradient/newton steps
 		self.gsa = GSA()
@@ -118,6 +118,34 @@ class CAVE(torch.nn.Module):
 			func_gd = self.opt_grad_var
 			func_nm = self.opt_newton_var
 
+		# Preprocess mean and var
+		if not (self.func.low == low and self.func.high == high):
+			if self.func.low != None and self.func.high != None and low != None and high != None:
+				amp_ratio = (self.func.high - self.func.low) / (high - low)
+				if mean != None:
+					mean = amp_ratio * mean + self.func.low - amp_ratio * low
+				if var != None:
+					var = var * amp_ratio ** 2
+
+			elif self.func.low != None and (low != None or high != None):
+				if low != None and high != None:
+					raise ValueError(f"Cannot specify low and high when "
+					                 f"{type(self.func).__name__}.high == None")
+				elif mean != None and low != None:
+					mean = mean + self.func.low - low
+				elif mean != None and high != None:
+					mean = -1.0 * (mean - high) + self.func.low
+
+			elif self.func.high != None and high != None:
+				if low != None and high != None:
+					raise ValueError(f"Cannot specify low and high when "
+					                 f"{type(self.func).__name__}.low == None")
+				elif mean != None and low != None:
+					mean = -1.0 * (mean - low) + self.func.high
+				elif mean != None and high != None:
+					mean = mean + self.func.high - high
+
+
 		# Initialize a and b
 		a = self.a_init
 		b = self.b_init
@@ -168,6 +196,24 @@ class CAVE(torch.nn.Module):
 			np.savetxt(os.path.join(self.log_dir, 'x.csv'),
 			           x.view(-1, 1).detach().numpy())
 
+		# Postprocess mean and var
+		if not (self.func.low == low and self.func.high == high):
+			if self.func.low != None and self.func.high != None and low != None and high != None:
+				amp_ratio = (self.func.high - self.func.low) / (high - low)
+				return (self.func.fx(a * x + b) - self.func.low + amp_ratio * low) / amp_ratio
+
+			elif self.func.low != None and (low != None or high != None):
+				if low != None:
+					return self.func.fx(a * x + b) - self.func.low + low
+				elif high != None:
+					return -1.0 * (self.func.fx(a * x + b) - self.func.low) + high
+
+			elif self.func.high != None and high != None:
+				if low != None:
+					return -1.0 * (self.func.fx(a * x + b) - self.func.high) + low
+				elif high != None:
+					return self.func.fx(a * x + b) - self.func.high + high
+
 		return self.func.fx(a * x + b)
 
 
@@ -192,19 +238,19 @@ class CAVE(torch.nn.Module):
 		dim = {'dim': dim, 'keepdim': True}
 
 		# Select CAVE method
-		if (low or high) and (mean or var):
+		if (low != None or high != None) and (mean != None or var != None):
 			return self.opt_cave(x, low, high, mean, var, sparse, dim)
-		elif low and high:
+		elif low != None and high != None:
 			return self.opt_range(x, low, high)
-		elif low:
+		elif low != None:
 			return self.opt_low(x, low)
-		elif high:
+		elif high != None:
 			return self.opt_high(x, high)
-		elif mean and var:
+		elif mean != None and var != None:
 			return self.opt_moments(x, mean, var, dim)
-		elif mean:
+		elif mean != None:
 			return self.opt_mean(x, mean, dim)
-		elif var:
+		elif var != None:
 			return self.opt_var(x, var, dim)
 		return x
 
