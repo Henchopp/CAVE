@@ -3,6 +3,8 @@ from torch import nn
 import torch.nn.functional as F
 from torchvision import datasets, transforms
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 class SimpleCNN(nn.Module):
 
     def __init__(self):
@@ -33,18 +35,44 @@ class SimpleCNN(nn.Module):
 
          output = F.log_softmax(x, dim = 1)
 
-def download_data():
+def get_data_loader(batch_size = 32, download = False):
 
     transform = transforms.Compose([
         transforms.Resize((224, 224)),  # scale imported image
         transforms.ToTensor()]
     )
 
-    data = datasets.CIFAR100(root = "/cave/cifar", download = False, transform = transform)
+    data = datasets.CIFAR100(root = "/cave/cifar", download = download, transform = transform)
 
-    data_loader = torch.utils.data.DataLoader(data, batch_size = 32, shuffle = True)
-
+    data_loader = torch.utils.data.DataLoader(data, batch_size = batch_size, shuffle = True)
 
     return data_loader
 
-download_data()
+def train(epochs = 100):
+
+    model = SimpleCNN()
+
+    model.train()
+
+    data_loader = get_data_loader()
+
+    optimizer = torch.optim.SGD(model.parameters(), lr = 0.001, momentum = 0.9)
+
+    for e in range(epochs):
+
+        for batch_indx, (feat, class) in enumerate(data_loader):
+            feat, class = feat.to(device), class.to(device)
+
+            optimizer.zero_grad()
+
+            output = model(feat)
+
+            loss = F.cross_entropy(output, class)
+
+            loss.backward()
+
+            optimizer.step()
+
+    return model
+
+train()
