@@ -40,9 +40,11 @@ def download_data():
         transforms.ToTensor()]
     )
 
-    data = datasets.CalTech(root = "/cave/caltech", download = True, transform = transform)
+    data = datasets.CIFAR100(root = "/cave/cifar", download = False, transform = transform)
 
     data_loader = torch.utils.data.DataLoader(data, batch_size = 32, shuffle = True)
 
 
-    return data_laoder
+    return data_loader
+
+download_data()
