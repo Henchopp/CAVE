@@ -1,5 +1,5 @@
 import torch
-from torch.nn as nn
+import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import datasets, transforms
 
@@ -10,14 +10,14 @@ class SimpleCNN(nn.Module):
     def __init__(self):
         super(SimpleCNN, self).__init__()
         # 2 convolution layers
-        self.conv1 = nn.Conv2D(in_channels = 3, out_channels = 32, kernel_size = 3) # 32 kernels
-        self.conv2 = nn.Conv2D(in_channels = 32, out_channels = 64, kernel_size = 3) # 2 kernels
+        self.conv1 = nn.Conv2d(in_channels = 3, out_channels = 32, kernel_size = 3) # 32 kernels
+        self.conv2 = nn.Conv2d(in_channels = 32, out_channels = 64, kernel_size = 3) # 2 kernels
         # normalization and dropout
         self.norm = nn.BatchNorm2d(num_features = 64)
         self.do = nn.Dropout(0.2)
         # fully connectec layers
-        self.fc1 = nn.Linear(9216, 128)
-        self.fc2 = nn.Linear(128, 10)
+        self.fc1 = nn.Linear(774400, 128)
+        self.fc2 = nn.Linear(128, 100)
 
     def forward(self, x):
 
@@ -35,6 +35,8 @@ class SimpleCNN(nn.Module):
 
          output = F.log_softmax(x, dim = 1)
 
+         return output
+
 def get_data_loader(batch_size = 32, download = False):
 
     transform = transforms.Compose([
@@ -51,6 +53,8 @@ def get_data_loader(batch_size = 32, download = False):
 def train(epochs = 100):
 
     model = SimpleCNN()
+    
+    model.to(device)
 
     model.train()
 
@@ -60,19 +64,26 @@ def train(epochs = 100):
 
     for e in range(epochs):
 
-        for batch_indx, (feat, class) in enumerate(data_loader):
-            feat, class = feat.to(device), class.to(device)
+        loss_hist = []
+
+        for batch_indx, (feat, label) in enumerate(data_loader):
+            
+            feat, label = feat.to(device), label.to(device)
 
             optimizer.zero_grad()
 
             output = model(feat)
 
-            loss = F.cross_entropy(output, class)
+            loss = F.cross_entropy(output, label)
+
+            loss_hist.append(loss.item())
 
             loss.backward()
 
             optimizer.step()
 
+        print(f"Epoch: {e} | Loss: {sum(loss_hist) / len(loss_hist)}")
+
     return model
 
-train()
+model = train()
