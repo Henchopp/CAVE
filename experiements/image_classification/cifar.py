@@ -18,6 +18,8 @@ class SimpleCNN(nn.Module):
         # fully connectec layers
         self.fc1 = nn.Linear(774400, 128)
         self.fc2 = nn.Linear(128, 100)
+        # setting CAVE
+        self.cave = CAVE(func = Sigmoid())
 
     def forward(self, x):
 
@@ -32,8 +34,9 @@ class SimpleCNN(nn.Module):
          x = self.fc1(x)
          x = F.relu(x)
          x = self.fc2(x)
+         x = F.log_softmax(x, dim = 1)
 
-         output = F.log_softmax(x, dim = 1)
+         output = self.cave(x, low = 0.0, high = 1.0, mean = 1e-2, var = 1e-2 - 1e-3 , sparse = True, dim = 0)
 
          return output
 
@@ -53,7 +56,7 @@ def get_data_loader(batch_size = 32, download = False):
 def train(epochs = 100):
 
     model = SimpleCNN()
-    
+
     model.to(device)
 
     model.train()
@@ -67,7 +70,7 @@ def train(epochs = 100):
         loss_hist = []
 
         for batch_indx, (feat, label) in enumerate(data_loader):
-            
+
             feat, label = feat.to(device), label.to(device)
 
             optimizer.zero_grad()
