@@ -155,15 +155,15 @@ class CAVE(torch.nn.Module):
 
 		# Spread data if sparse output required
 		if sparse:
-			if mean and mean > 0.5:
+			if mean is not None and mean > 0.5 * (self.func.low + self.func.high):
 				x = (x - x.std(**dim) - 1) ** 3
 				x = (x - x.mean(**dim)) / x.std(**dim)
 				x = x + x.std(**dim)
-			elif mean and mean <= 0.5:
+			elif mean is not None and mean <= 0.5 * (self.func.low + self.func.high):
 				x = (x + x.std(**dim) + 1) ** 3
 				x = (x - x.mean(**dim)) / x.std(**dim)
 				x = x - x.std(**dim)
-			elif var:
+			elif var is not None:
 				x = x * 10
 
 
