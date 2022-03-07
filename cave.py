@@ -151,7 +151,9 @@ class CAVE(torch.nn.Module):
 		b = self.b_init
 
 		# Standard normalize input
+		print("b4", x)
 		x = (x - x.mean(**dim)) / x.std(**dim)
+		prtin("aftr", x)
 		# Spread data if sparse output required
 		if sparse:
 			if mean and mean > 0.5:
@@ -211,7 +213,7 @@ class CAVE(torch.nn.Module):
 					return -1.0 * (self.func.fx(a * x + b) - self.func.high) + low
 				elif high != None:
 					return self.func.fx(a * x + b) - self.func.high + high
-		print("FINAL", a * x, b, x)
+
 		return self.func.fx(a * x + b)
 
 
