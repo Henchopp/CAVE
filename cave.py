@@ -153,7 +153,7 @@ class CAVE(torch.nn.Module):
 		# Standard normalize input
 		print("b4", x)
 		x = (x - x.mean(**dim)) / x.std(**dim)
-		prtin("aftr", x)
+		print("aftr", x)
 		# Spread data if sparse output required
 		if sparse:
 			if mean and mean > 0.5:
