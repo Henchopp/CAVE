@@ -211,7 +211,7 @@ class CAVE(torch.nn.Module):
 					return -1.0 * (self.func.fx(a * x + b) - self.func.high) + low
 				elif high != None:
 					return self.func.fx(a * x + b) - self.func.high + high
-		print("FINAL", a, b)
+		print("FINAL", a * x, b)
 		return self.func.fx(a * x + b)
 
 
