@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import datasets, transforms
+from CAVE.cave import CAVE
+from CAVE.utils.cave_base_functions import Sigmoid
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
