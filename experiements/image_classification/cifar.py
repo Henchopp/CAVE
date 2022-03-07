@@ -36,7 +36,7 @@ class SimpleCNN(nn.Module):
         x = self.fc1(x)
         x = F.relu(x)
         x = self.fc2(x)
-        # x = F.log_softmax(x, dim = 1)
+        x = F.log_softmax(x, dim = 1)
 
         output = self.cave(x, low = 0.0, high = 1.0, mean = 1e-2, var = 1e-2 - 1e-3 , sparse = True, dim = 0)
 
@@ -72,7 +72,7 @@ def train(epochs = 100):
         loss_hist = []
 
         for batch_indx, (feat, label) in enumerate(data_loader):
-
+            print(feat)
             feat, label = feat.to(device), label.to(device)
 
             optimizer.zero_grad()
@@ -87,7 +87,7 @@ def train(epochs = 100):
 
             optimizer.step()
 
-        print(f"Epoch: {e} | Loss: {sum(loss_hist) / len(loss_hist)}")
+        print(f"\n\n\n\n\n\nEpoch: {e} | Loss: {sum(loss_hist) / len(loss_hist)}\n\n\n\n\n\n")
 
     return model
 
