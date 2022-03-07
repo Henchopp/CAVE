@@ -3,8 +3,8 @@ import os
 import numpy as np
 import torch
 
-from utils.cave_base_functions import Sigmoid, Softplus
-from utils.cave_steps import GSA, GSB, GSAB, NSA, NSB, NSAB
+from CAVE.utils.cave_base_functions import Sigmoid, Softplus
+from CAVE.utils.cave_steps import GSA, GSB, GSAB, NSA, NSB, NSAB
 
 
 class CAVE(torch.nn.Module):
@@ -106,7 +106,7 @@ class CAVE(torch.nn.Module):
 		return da, db
 
 	def opt_cave(self, x, low, high, mean, var, sparse, dim, unbiased):
-		print(x)
+
 		# Select optimization methods
 		if mean and var:
 			func_gd = self.opt_grad_joint
