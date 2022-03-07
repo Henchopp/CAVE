@@ -24,23 +24,23 @@ class SimpleCNN(nn.Module):
         self.cave = CAVE(func = Sigmoid())
 
     def forward(self, x):
+        print(x)
+        x = self.conv1(x)
+        x = F.relu(x)
+        x = self.conv2(x)
+        x = F.relu(x)
+        x = F.max_pool2d(x, 2)
+        x = self.norm(x)
+        x = self.do(x)
+        x = torch.flatten(x, 1)
+        x = self.fc1(x)
+        x = F.relu(x)
+        x = self.fc2(x)
+        x = F.log_softmax(x, dim = 1)
 
-         x = self.conv1(x)
-         x = F.relu(x)
-         x = self.conv2(x)
-         x = F.relu(x)
-         x = F.max_pool2d(x, 2)
-         x = self.norm(x)
-         x = self.do(x)
-         x = torch.flatten(x, 1)
-         x = self.fc1(x)
-         x = F.relu(x)
-         x = self.fc2(x)
-         x = F.log_softmax(x, dim = 1)
-         print(x)
-         output = self.cave(x, low = 0.0, high = 1.0, mean = 1e-2, var = 1e-2 - 1e-3 , sparse = True, dim = 0)
+        output = self.cave(x, low = 0.0, high = 1.0, mean = 1e-2, var = 1e-2 - 1e-3 , sparse = True, dim = 0)
 
-         return output
+        return output
 
 def get_data_loader(batch_size = 32, download = False):
 
