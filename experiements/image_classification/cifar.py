@@ -24,7 +24,7 @@ class SimpleCNN(nn.Module):
         self.cave = CAVE(func = Sigmoid())
 
     def forward(self, x):
-        print(x)
+
         x = self.conv1(x)
         x = F.relu(x)
         x = self.conv2(x)
@@ -36,7 +36,7 @@ class SimpleCNN(nn.Module):
         x = self.fc1(x)
         x = F.relu(x)
         x = self.fc2(x)
-        x = F.log_softmax(x, dim = 1)
+        # x = F.log_softmax(x, dim = 1)
 
         output = self.cave(x, low = 0.0, high = 1.0, mean = 1e-2, var = 1e-2 - 1e-3 , sparse = True, dim = 0)
 
