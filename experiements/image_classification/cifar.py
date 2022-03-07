@@ -37,7 +37,7 @@ class SimpleCNN(nn.Module):
          x = F.relu(x)
          x = self.fc2(x)
          x = F.log_softmax(x, dim = 1)
-
+         print(x)
          output = self.cave(x, low = 0.0, high = 1.0, mean = 1e-2, var = 1e-2 - 1e-3 , sparse = True, dim = 0)
 
          return output
