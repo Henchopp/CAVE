@@ -106,7 +106,7 @@ class CAVE(torch.nn.Module):
 		return da, db
 
 	def opt_cave(self, x, low, high, mean, var, sparse, dim, unbiased):
-
+		print(x)
 		# Select optimization methods
 		if mean and var:
 			func_gd = self.opt_grad_joint
