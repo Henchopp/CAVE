@@ -31,7 +31,7 @@ class Gradient_Step_A(torch.autograd.Function):
 		# Read saved tensors
 		x, a, b = ctx.saved_tensors
 		dGa_dx = ctx.func.dGa_dx(x, a, b, ctx.var, ctx.dim, ctx.lr)
-		return grad * dGa_dx, None, None, None, None, None, None
+		return grad * dGa_dx, None, None, None, None, None, None, None
 
 
 class GSA(torch.nn.Module):
@@ -107,7 +107,7 @@ class Gradient_Step_AB(torch.autograd.Function):
 		# Read saved tensors
 		x, a, b = ctx.saved_tensors
 		dGa_dx, dGb_dx = ctx.func.dGab_dx(x, a, b, ctx.mean, ctx.var, ctx.dim, ctx.lr)
-		return grad1 * dGa_dx, grad2 * dGb_dx, None, None, None, None, None, None, None
+		return grad1 * dGa_dx, grad2 * dGb_dx, None, None, None, None, None, None, None, None
 		
 
 class GSAB(torch.nn.Module):
@@ -151,7 +151,7 @@ class Newton_Step_A(torch.autograd.Function):
 		# Read saved tensors
 		x, a, b = ctx.saved_tensors
 		dNa_dx = ctx.func.dNa_dx(x, a, b, ctx.var, ctx.dim, ctx.lr)
-		return grad * dNa_dx, None, None, None, None, None, None
+		return grad * dNa_dx, None, None, None, None, None, None, None
 
 
 class NSA(torch.nn.Module):
@@ -227,7 +227,7 @@ class Newton_Step_AB(torch.autograd.Function):
 		# Read saved tensors
 		x, a, b = ctx.saved_tensors
 		dNa_dx, dNb_dx = ctx.func.dNab_dx(x, a, b, ctx.mean, ctx.var, ctx.dim, ctx.lr)
-		return grad1 * dNa_dx, grad2 * dNb_dx, None, None, None, None, None, None, None
+		return grad1 * dNa_dx, grad2 * dNb_dx, None, None, None, None, None, None, None, None
 
 
 class NSAB(torch.nn.Module):
