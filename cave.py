@@ -152,7 +152,7 @@ class CAVE(torch.nn.Module):
 
 		# Standard normalize input
 		x = (x - x.mean(**dim)) / x.std(**dim)
-
+		print("STANDARD_NORM", x)
 		# Spread data if sparse output required
 		if sparse:
 			if mean and mean > 0.5:
@@ -165,7 +165,7 @@ class CAVE(torch.nn.Module):
 				x = x - x.std(**dim)
 			elif var:
 				x = x * 10
-
+		print("SPREAD", x)
 
 		# Gradient descent
 		for _ in range(self.n_step_gd):
