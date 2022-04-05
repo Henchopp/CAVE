@@ -31,13 +31,15 @@ def train(xrf_path, thresh, M, epochs = 10):
 
         optimizer.zero_grad() # zeroing gradients
 
-        output = torch.nn.Softplus(D) * A
+        output = F.softplus(D) * A
 
-        loss = F.poisson_nll_loss(output, xrf) # getting loss
+        loss = F.poisson_nll_loss(output, xrf, log_input = False) # getting loss
 
         loss.backward() # calculating gradients
 
         optimizer.step() # updating weights based on gradients
+
+        print(f"Loss {loss.item()} | Epoch: {e}")
 
 
 if(__name__ == "__main__"):
