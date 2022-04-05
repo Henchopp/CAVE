@@ -1,3 +1,4 @@
+import torch.nn.functional as F
 import numpy as np
 import torch
 import h5py
@@ -6,7 +7,7 @@ import os
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device, torch.cuda.device_count())
 
-def train(xrf_path, thresh, M):
+def train(xrf_path, thresh, M, epochs = 10):
     print('Reading data...')
 
     with h5py.File(xrf_path, "r") as hf:
@@ -20,9 +21,23 @@ def train(xrf_path, thresh, M):
     xrf = torch.transpose(torch.transpose(xrf, 0, 1)[0], 0, 2).shape
 
     D = torch.nn.Parameter(data = torch.rand(806, M), requires_grad = True)
-
+    D.to(device)
     A = torch.nn.Parameter(data = torch.rand(M, 578 * 673), requires_grad = True)
+    A.to(device)
 
+    optimizer = torch.optim.Adam([D, A], lr = 0.0001, betas = (0.9, 0.999))
+
+    for e in range(epochs):
+
+        optimizer.zero_grad() # zeroing gradients
+
+        output = torch.nn.Softplus(D) * A
+
+        loss = F.poisson_nll_loss(output, xrf) # getting loss
+
+        loss.backward() # calculating gradients
+
+        optimizer.step() # updating weights based on gradients
 
 
 if(__name__ == "__main__"):
