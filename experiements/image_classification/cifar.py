@@ -8,11 +8,13 @@ from CAVE.utils.cave_base_functions import Sigmoid
 import copy
 import numpy as np
 
+import time
+
 # torch.autograd.set_detect_anomaly(True)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 torch.manual_seed(0)
 batch_n = 0
-f = open("mean_sigmoid_outputs", "w")
+# f = open("mean_sigmoid_outputs", "w")
 
 class SimpleCNN(nn.Module):
 
@@ -46,21 +48,21 @@ class SimpleCNN(nn.Module):
         output = (x * x.mean(dim = 1, keepdim = True)).sigmoid()
         # output = x.sigmoid()
         # output = F.log_softmax(x, dim = 1)
-         
-        # output = self.cave(x, low = 0.0, high = 1.0, mean = 1e-2, var = None , sparse = False, dim = 1, unbiased = False)
-        if(batch_n == 0):
-            f.write(np.array2string(output.cpu().detach().numpy()[0]) + "\n\n")
+
+        output = self.cave(x, low = 0.0, high = 1.0, mean = 1e-2, var = None , sparse = False, dim = 1, unbiased = False)
+        # if(batch_n == 0):
+        #     f.write(np.array2string(output.cpu().detach().numpy()[0]) + "\n\n")
 
         output = output + 1e-20
         output = output / output.sum(dim = 1, keepdim=True)
-        
+
         output = output.log()
 
-        
+
         return output
 
 def get_data_loader(batch_size = 600, download = False, train = True):
-    
+
     loaders = []
 
     transform = transforms.Compose([
@@ -68,13 +70,13 @@ def get_data_loader(batch_size = 600, download = False, train = True):
         transforms.ToTensor()]
     )
 
-    data = datasets.CIFAR100(root = "/cave/cifar", download = download, transform = transform, train = train)
-    
+    data = datasets.CIFAR100(root = "/home/prs5019/cave", download = download, transform = transform, train = train)
+
     if(train == True):
         data = list(random_split(data, [40000, 10000]))
     else:
         data = [data]
-    
+
     for data_set in data:
 
         loaders.append(
@@ -85,7 +87,7 @@ def get_data_loader(batch_size = 600, download = False, train = True):
 
 def train(epochs = 100):
 
-    global batch_n
+    # global batch_n
     model = SimpleCNN()
 
     model.to(device)
@@ -96,14 +98,14 @@ def train(epochs = 100):
     test = get_data_loader(train = False)[0]
 
     optimizer = torch.optim.Adam(model.parameters(), lr = 0.0001, betas = (0.9, 0.999))
-    
+
     max_acc = 0
     last_max = 0
     max_state_dict = model.state_dict()
-
+    times = []
 
     for e in range(epochs):
-
+        start = time.time()
         loss_hist = []
 
         for batch_indx, (feat, label) in enumerate(train):
@@ -112,7 +114,7 @@ def train(epochs = 100):
 
             optimizer.zero_grad()
 
-            batch_n = batch_indx
+            # batch_n = batch_indx
             output = model(feat)
 
             loss = F.nll_loss(output, label)
@@ -122,6 +124,9 @@ def train(epochs = 100):
             loss.backward()
 
             optimizer.step()
+
+        end = time.time()
+        times.append(end - start)
 
         # ======== validation =========
         val_loss = 0
@@ -138,7 +143,7 @@ def train(epochs = 100):
                 val_loss += F.nll_loss(outputs, label).item()
                 correct += len((outputs.argmax(dim = 1) == label).nonzero())
                 wrong += 600 - len((outputs.argmax(dim = 1) == label).nonzero())
-        
+
         if(correct / (correct + wrong) > max_acc):
             max_acc = correct / (correct + wrong)
             last_max = 0
@@ -149,8 +154,8 @@ def train(epochs = 100):
         if(last_max > 9):
             break
 
-        print(f"Epoch: {e} | Train Loss: {sum(loss_hist) / len(loss_hist)} | Val Loss: {val_loss / len(val)} | Val Acc: {correct / (correct + wrong)}")
-   
+        print(f"Epoch: {e} | Train Loss: {sum(loss_hist) / len(loss_hist)} | Val Loss: {val_loss / len(val)} | Val Acc: {correct / (correct + wrong)} | Time: {sum(times) / len(times)}")
+
 
     # reloading best model
     model.load_state_dict(max_state_dict)
@@ -187,14 +192,14 @@ def train(epochs = 100):
             test_loss += F.nll_loss(outputs, label).item()
             correct += len((outputs.argmax(dim = 1) == label).nonzero())
             wrong += 600 - len((outputs.argmax(dim = 1) == label).nonzero())
-            
+
             top_5 = torch.topk(outputs, 5, dim = 1).indices.cpu().numpy()
 
             for i, five in enumerate(top_5):
                 if(label.cpu().numpy()[i] in five):
                     top_5_c += 1
                 else:
-                    top_5_w += 1 
+                    top_5_w += 1
 
 
     print(f"Test Loss: {test_loss / len(test)} | Test Acc: {correct / (correct + wrong)} | Top 5 Acc: {top_5_c / (top_5_c + top_5_w)}")
@@ -204,4 +209,4 @@ def train(epochs = 100):
 model = train(100)
 torch.save(model.state_dict(), "./CAVE")
 
-f.close()
+# f.close()
