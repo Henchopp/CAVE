@@ -26,9 +26,9 @@ def train(xrf_path, thresh, M, epochs = 100):
     D = torch.nn.Parameter(data = torch.rand(xrf.shape[0], M, device = device), requires_grad = True)
     A = torch.nn.Parameter(data = torch.rand(M, xrf.shape[1], device = device), requires_grad = True)
 
-    optimizer = torch.optim.Adam([D, A], lr = 1.0e-1, betas = (0.9, 0.999))
+    optimizer = torch.optim.Adam([D, A], lr = 1.0, betas = (0.9, 0.999))
 
-    cave = CAVE(func = Sigmoid()).to(device)
+    cave = CAVE(func = Sigmoid(), n_step_nm = 15, n_step_gd = 5).to(device)
 
     losses = []
 
@@ -40,7 +40,7 @@ def train(xrf_path, thresh, M, epochs = 100):
     for e in range(epochs):
 
         optimizer.zero_grad() # zeroing gradients
-        output = torch.matmul(F.softplus(D), A * cave(A, low = 0, high = 1, mean = 0.1, var = 0.1, sparse = True))
+        output = torch.matmul(F.softplus(D), F.relu(A) * cave(A, low = 0, high = 1, mean = 0.1, var = 0.1, sparse = True))
 
         loss = F.poisson_nll_loss(output, xrf, log_input = False) # getting loss
 
@@ -49,7 +49,7 @@ def train(xrf_path, thresh, M, epochs = 100):
         optimizer.step() # updating weights based on gradients
 
         losses.append(loss.item())
-        print(loss.item() + 17.013126373291016)
+
         if(min_loss == None or loss.item() + 17.013126373291016 < min_loss):
             min_loss = loss.item() + 17.013126373291016
             min_D = D
@@ -63,4 +63,4 @@ def train(xrf_path, thresh, M, epochs = 100):
 
 
 if(__name__ == "__main__"):
-    train("/home/prs5019/cave/deheem_orig.h5", 10, 5000)
+    train("/home/prs5019/cave/deheem_orig.h5", 10, 100, 5000)
