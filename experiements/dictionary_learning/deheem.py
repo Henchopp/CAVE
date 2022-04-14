@@ -64,14 +64,14 @@ def train(xrf_path, thresh, M, epochs = 100):
         print(f"Loss {loss.item() - global_min} | Epoch: {e}")
 
         # decreasing learning rate when threshold reached
-        if(loss.item() - global_min <= 0.35):
+        if(loss.item() - global_min <= 0.3):
             for param_group in optimizer.param_groups:
-                    param_group["lr"] = param_group["lr"] * 0.1
+                    param_group["lr"] = param_group["lr"] * 0.9
 
         if(e != 0 and e % 10 == 0):
 
             # see if we should break
-            if(100 * (1 - last_10 / prev_last_10) < 0.1 and e != 10):
+            if(100 * (1 - last_10 / prev_last_10) < 0.05 and e != 10):
                 break
 
             prev_last_10 = last_10
