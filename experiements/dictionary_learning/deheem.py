@@ -7,7 +7,7 @@ import h5py
 import os
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(device, torch.cuda.device_count())
+torch.manual_seed(0)
 
 def train(xrf_path, thresh, M, epochs = 100):
     print('Reading data...')
@@ -22,7 +22,8 @@ def train(xrf_path, thresh, M, epochs = 100):
     xrf = xrf[inds,:,:]
     xrf = xrf.reshape(xrf.shape[0], xrf.shape[1] * xrf.shape[2]).to(device)
 
-    # print(F.poisson_nll_loss(xrf, xrf, log_input = False).item())
+    global_min = F.poisson_nll_loss(xrf, xrf, log_input = False).item() # getting global min to make minimum loss 0 later
+
     D = torch.nn.Parameter(data = torch.rand(xrf.shape[0], M, device = device), requires_grad = True)
     A = torch.nn.Parameter(data = torch.rand(M, xrf.shape[1], device = device), requires_grad = True)
 
@@ -35,7 +36,9 @@ def train(xrf_path, thresh, M, epochs = 100):
     min_loss = None
     min_D = None
     min_A = None
-    min_index = 0
+
+    last_10 = 0
+    prev_last_10 = 1
 
     for e in range(epochs):
 
@@ -50,17 +53,36 @@ def train(xrf_path, thresh, M, epochs = 100):
 
         losses.append(loss.item())
 
-        if(min_loss == None or loss.item() + 17.013126373291016 < min_loss):
-            min_loss = loss.item() + 17.013126373291016
+        # ================ early stopping and lr adjustment ====================
+
+        if(min_loss == None or loss.item() - global_min < min_loss):
+            min_loss = loss.item() - global_min
             min_D = D
             min_A = A
-            min_index = e
 
-        print(f"Loss {loss.item() + 17.013126373291016} | Epoch: {e}")
 
-        if(e - min_index > 100):
-            break
+        print(f"Loss {loss.item() - global_min} | Epoch: {e}")
+
+        # decreasing learning rate when threshold reached
+        if(loss.item() - global_min <= 0.35):
+            for param_group in optimizer.param_groups:
+                    param_group["lr"] = param_group["lr"] * 0.1
+
+        if(e != 0 and e % 10 == 0):
+
+            # see if we should break
+            if(100 * (1 - last_10 / prev_last_10) < 0.1 and e != 10):
+                break
+
+            prev_last_10 = last_10
+            last_10 = 0
+
+        else:
+            last_10 += (loss.item() - global_min) / 10
+
+    torch.save(min_D, "/home/prs5019/cave/min_D")
+    torch.save(min_A, "/home/prs5019/cave/min_A")
 
 
 if(__name__ == "__main__"):
-    train("/home/prs5019/cave/deheem_orig.h5", 10, 100, 5000)
+    train("/home/prs5019/cave/deheem_orig.h5", 10, 100, 50_000)
