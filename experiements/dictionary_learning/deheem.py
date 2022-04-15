@@ -19,6 +19,9 @@ def train(xrf_path, thresh, M, epochs = 100):
         xrf = xrf.round()
 
     inds = xrf.sum(dim = [1,2]) > thresh # getting indices from sum dist
+
+    np.savetxt("inds.csv", inds, delimiter = ",")
+    
     xrf = xrf[inds,:,:]
     xrf = xrf.reshape(xrf.shape[0], xrf.shape[1] * xrf.shape[2]).to(device)
 
@@ -27,7 +30,9 @@ def train(xrf_path, thresh, M, epochs = 100):
     D = torch.nn.Parameter(data = torch.rand(xrf.shape[0], M, device = device), requires_grad = True)
     A = torch.nn.Parameter(data = torch.rand(M, xrf.shape[1], device = device), requires_grad = True)
 
-    optimizer = torch.optim.Adam([D, A], lr = 1.0, betas = (0.9, 0.999))
+    A_v = A.view(A.shape[0], 578, 673)
+
+    optimizer = torch.optim.Adam([D, A], lr = 5.0e-1, betas = (0.9, 0.999))
 
     cave = CAVE(func = Sigmoid(), n_step_nm = 15, n_step_gd = 5).to(device)
 
@@ -43,10 +48,11 @@ def train(xrf_path, thresh, M, epochs = 100):
     for e in range(epochs):
 
         optimizer.zero_grad() # zeroing gradients
-        output = torch.matmul(F.softplus(D), F.relu(A) * cave(A, low = 0, high = 1, mean = 0.1, var = 0.1, sparse = True))
+        a_temp = cave(A, low = 0, high = 1, mean = 0.1, var = 0.1, sparse = True)
+        output = torch.matmul(F.softplus(D), F.relu(A) * a_temp)
 
         loss = F.poisson_nll_loss(output, xrf, log_input = False) # getting loss
-
+        loss = loss + (((A_v[:, 1:, :] - A_v[:, :-1, :]) ** 2).mean() + ((A_v[:, :, 1:] - A_v[:, :, :-1]) ** 2).mean()) * 0.01
         loss.backward() # calculating gradients
 
         optimizer.step() # updating weights based on gradients
@@ -61,7 +67,7 @@ def train(xrf_path, thresh, M, epochs = 100):
             min_A = A
 
 
-        print(f"Loss {loss.item() - global_min} | Epoch: {e}")
+        print(f"Loss {loss.item() - global_min} | Epoch: {e} | mean: {a_temp.mean()} | var: {a_temp.var()}")
 
         # decreasing learning rate when threshold reached
         if(loss.item() - global_min <= 0.3):
@@ -71,8 +77,8 @@ def train(xrf_path, thresh, M, epochs = 100):
         if(e != 0 and e % 10 == 0):
 
             # see if we should break
-            if(100 * (1 - last_10 / prev_last_10) < 0.05 and e != 10):
-                break
+            # if(100 * (1 - last_10 / prev_last_10) < 0.05 and e != 10):
+            #    break
 
             prev_last_10 = last_10
             last_10 = 0
@@ -80,9 +86,10 @@ def train(xrf_path, thresh, M, epochs = 100):
         else:
             last_10 += (loss.item() - global_min) / 10
 
-    torch.save(min_D, "/home/prs5019/cave/min_D")
-    torch.save(min_A, "/home/prs5019/cave/min_A")
+        if(e != 0 and e % 200 == 0):
+            np.savetxt(f"/home/prs5019/cave/min_D_{e}", min_D.detach().cpu().numpy(), delimiter = ",")
+            np.savetxt(f"/home/prs5019/cave/min_A_{e}", min_A.detach().cpu().numpy(), delimiter = ",")
 
 
 if(__name__ == "__main__"):
-    train("/home/prs5019/cave/deheem_orig.h5", 10, 100, 50_000)
+    train("/home/prs5019/cave/deheem_orig.h5", 0, 100, 50_000)
