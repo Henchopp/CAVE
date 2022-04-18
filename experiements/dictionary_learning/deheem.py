@@ -29,7 +29,7 @@ def train(xrf_path, thresh, M, epochs = 100):
 
     global_min = F.poisson_nll_loss(xrf, xrf, log_input = False).item() # getting global min to make minimum loss 0 later
 
-    D_data = torch.from_numpy(np.array(pd.read_csv("/home/prs5019/cave/cave_data/D_raster0,05_all.csv", sep = " ").values, dtype = np.float64)).to(device)
+    D_data = torch.from_numpy(np.loadtxt("/home/prs5019/cave/cave_data/D_raster0,05_all.csv", dtype = np.float64)[inds.numpy()]).to(device)
 
     with h5py.File("/home/prs5019/cave/cave_data/A_raster0,05_all.h5") as hf:
 
@@ -40,7 +40,7 @@ def train(xrf_path, thresh, M, epochs = 100):
 
     A_v = A.view(A.shape[0], 578, 673)
 
-    optimizer = torch.optim.Adam([D, A], lr = 1.0, betas = (0.9, 0.999))
+    optimizer = torch.optim.Adam([D, A], lr = 1.0e-3, betas = (0.9, 0.999))
 
     cave = CAVE(func = Sigmoid(), n_step_nm = 15, n_step_gd = 5).to(device)
 
@@ -77,12 +77,12 @@ def train(xrf_path, thresh, M, epochs = 100):
 
         A_cave = cave(A, low = 0, high = 1, mean = 5 / 37, var = 40 / 333, sparse = True)
         output = torch.matmul(F.relu(D), F.relu(A) * A_cave)
-
+	
         # ============ smoothing loss ==============
         l_tv = 0.1
         tv_r = (tv_adap_w_r * ((A_v[:,:-1,:] - A_v[:,1:,:]) ** 2)).mean()
         tv_c = (tv_adap_w_c * ((A_v[:,:,:-1] - A_v[:,:,1:]) ** 2)).mean()
-        print(output.shape, xrf.shape)
+
         loss = F.poisson_nll_loss(output, xrf, log_input = False) + l_tv * (tv_r + tv_c) # getting loss
 
         loss.backward() # calculating gradients
@@ -102,14 +102,14 @@ def train(xrf_path, thresh, M, epochs = 100):
         print(f"Loss {loss.item() - global_min} | Epoch: {e} | Mean: {A_cave.mean()} | Var: {A_cave.var()}")
 
         # decreasing learning rate when threshold reached
-        if(loss.item() - global_min <= 0.35):
+        if(loss.item() - global_min <= 1.186):
             for param_group in optimizer.param_groups:
-                    param_group["lr"] = param_group["lr"] * 0.1
+                    param_group["lr"] = param_group["lr"]# * 0.1
 
         if(e != 0 and e % 10 == 0):
 
             # see if we should break
-            if(100 * (1 - last_10 / prev_last_10) < 0.1 and e != 10):
+            if(100 * (1 - last_10 / prev_last_10) < 0.001 and e != 10):
                 break
 
             prev_last_10 = last_10
@@ -123,4 +123,4 @@ def train(xrf_path, thresh, M, epochs = 100):
 
 
 if(__name__ == "__main__"):
-    train("/home/prs5019/cave/cave_data/deheem_raster0,05.h5", 10, 37, 50_000)
+    train("/home/prs5019/cave/cave_data/deheem_raster0,05.h5", 0, 37, 50_000)
