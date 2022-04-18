@@ -31,6 +31,8 @@ def train(xrf_path, thresh, M, epochs = 100):
     D = torch.nn.Parameter(data = torch.rand(xrf.shape[0], M, device = device), requires_grad = True)
     A = torch.nn.Parameter(data = torch.rand(M, xrf.shape[1], device = device), requires_grad = True)
 
+    A_v = A.view(A.shape[0], 578, 673)
+
     optimizer = torch.optim.Adam([D, A], lr = 1.0, betas = (0.9, 0.999))
 
     cave = CAVE(func = Sigmoid(), n_step_nm = 15, n_step_gd = 5).to(device)
