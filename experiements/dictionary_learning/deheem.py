@@ -82,7 +82,7 @@ def train(xrf_path, thresh, M, epochs = 100):
         l_tv = 0.1
         tv_r = (tv_adap_w_r * ((A_v[:,:-1,:] - A_v[:,1:,:]) ** 2)).mean()
         tv_c = (tv_adap_w_c * ((A_v[:,:,:-1] - A_v[:,:,1:]) ** 2)).mean()
-
+        print(output.shape, xrf.shape)
         loss = F.poisson_nll_loss(output, xrf, log_input = False) + l_tv * (tv_r + tv_c) # getting loss
 
         loss.backward() # calculating gradients
