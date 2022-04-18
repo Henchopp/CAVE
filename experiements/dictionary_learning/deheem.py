@@ -45,12 +45,12 @@ def train(xrf_path, thresh, M, epochs = 100):
     # Vertical adaptive weights
     tv_adap_w_r = ((image[:,:-1,:] - image[:,1:,:]) ** 2).sum(dim = 0, keepdim = True)
     tv_adap_w_r = (-16.0 * tv_adap_w_r).exp() / t
-    tv_adap_w_r = tv_adap_w_r.to(dev)
+    tv_adap_w_r = tv_adap_w_r.to(device)
 
     # Horizontal adaptive weights
     tv_adap_w_c = ((image[:,:,:-1] - image[:,:,1:]) ** 2).sum(dim = 0, keepdim = True)
     tv_adap_w_c = (-16.0 * tv_adap_w_c).exp() / t
-    tv_adap_w_c = tv_adap_w_c.to(dev)
+    tv_adap_w_c = tv_adap_w_c.to(device)
 
     # ================= data collection initializations ================
 
