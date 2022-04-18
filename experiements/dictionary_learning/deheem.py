@@ -36,7 +36,7 @@ def train(xrf_path, thresh, M, epochs = 100):
         A_data = torch.from_numpy(np.array(hf["data"][:], dtype = np.float64)).to(device)
 
     D = torch.nn.Parameter(data = D_data, requires_grad = True)
-    A = torch.nn.Parameter(data = A_data, device = device), requires_grad = True)
+    A = torch.nn.Parameter(data = A_data, requires_grad = True)
 
     A_v = A.view(A.shape[0], 578, 673)
 
