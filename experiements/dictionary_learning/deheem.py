@@ -29,10 +29,10 @@ def train(xrf_path, thresh, M, epochs = 100):
 
     global_min = F.poisson_nll_loss(xrf, xrf, log_input = False).item() # getting global min to make minimum loss 0 later
 
-    D_test = torch.from_numpy(np.array(pd.read_csv("/home/prs5019/cave/cave_data/D_raster0,05_all.csv").values), device = device)
+    D_test = torch.from_numpy(np.array(pd.read_csv("/home/prs5019/cave/cave_data/D_raster0,05_all.csv").values))
 
     with h5py.File("/home/prs5019/cave/cave_data/A_raster0,05_all.h5") as hf:
-        A_test = torch.from_numpy(np.array(hf["A"][:], dtype = np.float64), device = device)
+        A_test = torch.from_numpy(np.array(hf["A"][:], dtype = np.float64))
     print(D_test.shape, A_test.shape)
     D = torch.nn.Parameter(data = torch.rand(xrf.shape[0], M, device = device), requires_grad = True)
     A = torch.nn.Parameter(data = torch.rand(M, xrf.shape[1], device = device), requires_grad = True)
