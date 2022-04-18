@@ -47,9 +47,9 @@ class SimpleCNN(nn.Module):
         x = self.fc2(x)
         output = (x * x.mean(dim = 1, keepdim = True)).sigmoid()
         # output = x.sigmoid()
-        output = F.log_softmax(x, dim = 1)
+        # output = F.log_softmax(x, dim = 1)
 	
-        """
+        
         output = self.cave(x, low = 0.0, high = 1.0, mean = 1e-2, var = None , sparse = False, dim = 1, unbiased = False)
         # if(batch_n == 0):
         #     f.write(np.array2string(output.cpu().detach().numpy()[0]) + "\n\n")
@@ -58,7 +58,6 @@ class SimpleCNN(nn.Module):
         output = output / output.sum(dim = 1, keepdim=True)
 
         output = output.log()
-	"""
 
         return output
 
@@ -208,6 +207,6 @@ def train(epochs = 100):
     return model
 
 model = train(100)
-torch.save(model.state_dict(), "./CAVE")
+torch.save(model.state_dict(), "/home/prs5019/cave/cave_saved")
 
 # f.close()
