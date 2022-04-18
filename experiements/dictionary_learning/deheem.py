@@ -32,6 +32,7 @@ def train(xrf_path, thresh, M, epochs = 100):
     D_test = torch.from_numpy(np.array(pd.read_csv("/home/prs5019/cave/cave_data/D_raster0,05_all.csv", sep = " ").values, dtype = np.float64))
 
     with h5py.File("/home/prs5019/cave/cave_data/A_raster0,05_all.h5") as hf:
+        print([key for key in hf.keys()])
         A_test = torch.from_numpy(np.array(hf["A"][:], dtype = np.float64))
     print(D_test.shape, A_test.shape)
     D = torch.nn.Parameter(data = torch.rand(xrf.shape[0], M, device = device), requires_grad = True)
