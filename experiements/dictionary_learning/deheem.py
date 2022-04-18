@@ -29,7 +29,7 @@ def train(xrf_path, thresh, M, epochs = 100):
 
     global_min = F.poisson_nll_loss(xrf, xrf, log_input = False).item() # getting global min to make minimum loss 0 later
 
-    D_data = torch.from_numpy(np.array(pd.read_csv("/home/prs5019/cave/cave_data/D_raster0,05_all.csv", sep = " ").values, dtype = np.float64)).to)device
+    D_data = torch.from_numpy(np.array(pd.read_csv("/home/prs5019/cave/cave_data/D_raster0,05_all.csv", sep = " ").values, dtype = np.float64).to(device)
 
     with h5py.File("/home/prs5019/cave/cave_data/A_raster0,05_all.h5") as hf:
 
@@ -74,7 +74,9 @@ def train(xrf_path, thresh, M, epochs = 100):
     for e in range(epochs):
 
         optimizer.zero_grad() # zeroing gradients
-        output = torch.matmul(F.softplus(D), F.relu(A) * cave(A, low = 0, high = 1, mean = 5 / 37, var = 40 / 333, sparse = True))
+
+        A_cave = cave(A, low = 0, high = 1, mean = 5 / 37, var = 40 / 333, sparse = True)
+        output = torch.matmul(F.relu(D), F.relu(A) * A_cave)
 
         # ============ smoothing loss ==============
         l_tv = 0.1
@@ -97,7 +99,7 @@ def train(xrf_path, thresh, M, epochs = 100):
             min_A = A
 
 
-        print(f"Loss {loss.item() - global_min} | Epoch: {e}")
+        print(f"Loss {loss.item() - global_min} | Epoch: {e} | Mean: {A_cave.mean()} | Var: {A_cave.var()}")
 
         # decreasing learning rate when threshold reached
         if(loss.item() - global_min <= 0.35):
