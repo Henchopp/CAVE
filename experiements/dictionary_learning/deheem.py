@@ -82,7 +82,7 @@ def train(xrf_path, thresh, M, epochs = 100):
         l_tv = 0.1
         tv_r = (tv_adap_w_r * ((A_v[:,:-1,:] - A_v[:,1:,:]) ** 2)).mean()
         tv_c = (tv_adap_w_c * ((A_v[:,:,:-1] - A_v[:,:,1:]) ** 2)).mean()
-        print(output.shape, xrf.shape)
+
         loss = F.poisson_nll_loss(output, xrf, log_input = False) + l_tv * (tv_r + tv_c) # getting loss
 
         loss.backward() # calculating gradients
@@ -118,8 +118,19 @@ def train(xrf_path, thresh, M, epochs = 100):
         else:
             last_10 += (loss.item() - global_min) / 10
 
-    torch.save(min_D, "/home/prs5019/cave/min_D")
-    torch.save(min_A, "/home/prs5019/cave/min_A")
+
+	with h5py.File("dna.h5", "w") as hf:
+		hf.create_dataset("A", data = A_v.detach().cpu().numpy())
+
+		with torch.no_grad():
+			Y = torch.zeros(2048, 578, 673)
+            X = torch.zeros(2048, 578, 673)
+
+			Y[inds,:,:] = D @ A_v
+            X[inds,:,:] = D
+
+			hf.create_dataset("XRF", data = Y.cpu().numpy())
+            hf.create_dataset("D", data = X.detach().cpu().numpy())
 
 
 if(__name__ == "__main__"):
