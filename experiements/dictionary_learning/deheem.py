@@ -37,18 +37,18 @@ def train(xrf_path, thresh, M, epochs = 100):
 
     # ================= smoothing initializations ======================
 
-	image = torchvision.transforms.ToTensor()(Image.open("/home/prs5019/cave/cave_data/deheem.png"))
-	t = 0.05
+    image = torchvision.transforms.ToTensor()(Image.open("/home/prs5019/cave/cave_data/deheem.png"))
+    t = 0.05
 
-	# Vertical adaptive weights
-	tv_adap_w_r = ((image[:,:-1,:] - image[:,1:,:]) ** 2).sum(dim = 0, keepdim = True)
-	tv_adap_w_r = (-16.0 * tv_adap_w_r).exp() / t
-	tv_adap_w_r = tv_adap_w_r.to(dev)
+    # Vertical adaptive weights
+    tv_adap_w_r = ((image[:,:-1,:] - image[:,1:,:]) ** 2).sum(dim = 0, keepdim = True)
+    tv_adap_w_r = (-16.0 * tv_adap_w_r).exp() / t
+    tv_adap_w_r = tv_adap_w_r.to(dev)
 
-	# Horizontal adaptive weights
-	tv_adap_w_c = ((image[:,:,:-1] - image[:,:,1:]) ** 2).sum(dim = 0, keepdim = True)
-	tv_adap_w_c = (-16.0 * tv_adap_w_c).exp() / t
-	tv_adap_w_c = tv_adap_w_c.to(dev)
+    # Horizontal adaptive weights
+    tv_adap_w_c = ((image[:,:,:-1] - image[:,:,1:]) ** 2).sum(dim = 0, keepdim = True)
+    tv_adap_w_c = (-16.0 * tv_adap_w_c).exp() / t
+    tv_adap_w_c = tv_adap_w_c.to(dev)
 
     # ================= data collection initializations ================
 
@@ -68,9 +68,9 @@ def train(xrf_path, thresh, M, epochs = 100):
         output = torch.matmul(F.softplus(D), F.relu(A) * cave(A, low = 0, high = 1, mean = 0.1, var = 0.1, sparse = True))
 
         # ============ smoothing loss ==============
-    	l_tv = 0.1
-    	tv_r = (tv_adap_w_r * ((A_v[:,:-1,:] - A_v[:,1:,:]) ** 2)).mean()
-    	tv_c = (tv_adap_w_c * ((A_v[:,:,:-1] - A_v[:,:,1:]) ** 2)).mean()
+        l_tv = 0.1
+        tv_r = (tv_adap_w_r * ((A_v[:,:-1,:] - A_v[:,1:,:]) ** 2)).mean()
+        tv_c = (tv_adap_w_c * ((A_v[:,:,:-1] - A_v[:,:,1:]) ** 2)).mean()
 
         loss = F.poisson_nll_loss(output, xrf, log_input = False) + l_tv * (tv_r + tv_c) # getting loss
 
