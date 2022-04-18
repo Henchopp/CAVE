@@ -74,7 +74,7 @@ def train(xrf_path, thresh, M, epochs = 100):
     for e in range(epochs):
 
         optimizer.zero_grad() # zeroing gradients
-        output = torch.matmul(F.softplus(D), F.relu(A) * cave(A, low = 0, high = 1, mean = 5 / 37, var = 0.12, sparse = True))
+        output = torch.matmul(F.softplus(D), F.relu(A) * cave(A, low = 0, high = 1, mean = 5 / 37, var = 40 / 333, sparse = True))
 
         # ============ smoothing loss ==============
         l_tv = 0.1
