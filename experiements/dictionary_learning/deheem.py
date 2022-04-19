@@ -32,8 +32,9 @@ def train(xrf_path, thresh, M, epochs = 100):
     D_data = torch.from_numpy(np.loadtxt("/home/prs5019/cave/cave_data/D_raster0,05_all.csv", dtype = np.float32)[inds.numpy()]).to(device)
 
     with h5py.File("/home/prs5019/cave/cave_data/A_raster0,05_all.h5") as hf:
-
-        A_data = torch.from_numpy(np.array(hf["data"][:], dtype = np.float32)).to(device)
+        A_data = np.array(hf["data"][:], dtype = np.float32)
+        A_data[A_data == 0] = -1 * np.random.uniform(0, 1.0e-6)
+        A_data = torch.from_numpy(A_data).to(device)
 
     D = torch.nn.Parameter(data = D_data, requires_grad = True)
     A = torch.nn.Parameter(data = A_data, requires_grad = True)
@@ -121,7 +122,7 @@ def train(xrf_path, thresh, M, epochs = 100):
 
     with h5py.File("/home/prs5019/dna.h5", "w") as hf:
         min_A_v = min_A.view(min_A.shape[0], 578, 673)
-        A_v_cave = cave(min_A_v, low = 0, high = 1, mean = 5 / 37, var = 40 / 333, sparse = True) 
+        A_v_cave = cave(min_A_v, low = 0, high = 1, mean = 5 / 37, var = 40 / 333, sparse = True)
 
         hf.create_dataset("A", data = F.relu(min_A_v).detach().cpu().numpy())
         hf.create_dataset("S", data = A_v_cave.detach().cpu().numpy())
