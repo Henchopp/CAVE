@@ -29,18 +29,18 @@ def train(xrf_path, thresh, M, epochs = 100):
 
     global_min = F.poisson_nll_loss(xrf, xrf, log_input = False).item() # getting global min to make minimum loss 0 later
 
-    D_data = torch.from_numpy(np.loadtxt("/home/prs5019/cave/cave_data/D_raster0,05_all.csv", dtype = np.float64)[inds.numpy()]).to(device)
+    D_data = torch.from_numpy(np.loadtxt("/home/prs5019/cave/cave_data/D_raster0,05_all.csv", dtype = np.float32)[inds.numpy()]).to(device)
 
     with h5py.File("/home/prs5019/cave/cave_data/A_raster0,05_all.h5") as hf:
 
-        A_data = torch.from_numpy(np.array(hf["data"][:], dtype = np.float64)).to(device)
+        A_data = torch.from_numpy(np.array(hf["data"][:], dtype = np.float32)).to(device)
 
     D = torch.nn.Parameter(data = D_data, requires_grad = True)
     A = torch.nn.Parameter(data = A_data, requires_grad = True)
 
     A_v = A.view(A.shape[0], 578, 673)
 
-    optimizer = torch.optim.Adam([D, A], lr = 1.0e-3, betas = (0.9, 0.999))
+    optimizer = torch.optim.Adam([D, A], lr = 1.0e-6, betas = (0.9, 0.999))
 
     cave = CAVE(func = Sigmoid(), n_step_nm = 15, n_step_gd = 5).to(device)
 
@@ -109,8 +109,9 @@ def train(xrf_path, thresh, M, epochs = 100):
         if(e != 0 and e % 10 == 0):
 
             # see if we should break
-            if(100 * (1 - last_10 / prev_last_10) < 0.001 and e != 10):
-                break
+            if(100 * (1 - last_10 / prev_last_10) < 1.0e-5 and e != 10):
+                # break
+                pass
 
             prev_last_10 = last_10
             last_10 = 0
@@ -118,19 +119,22 @@ def train(xrf_path, thresh, M, epochs = 100):
         else:
             last_10 += (loss.item() - global_min) / 10
 
+    with h5py.File("/home/prs5019/dna.h5", "w") as hf:
+        min_A_v = min_A.view(min_A.shape[0], 578, 673)
+        A_v_cave = cave(min_A_v, low = 0, high = 1, mean = 5 / 37, var = 40 / 333, sparse = True) 
 
-    with h5py.File("dna.h5", "w") as hf:
-        hf.create_dataset("A", data = A_v.detach().cpu().numpy())
+        hf.create_dataset("A", data = F.relu(min_A_v).detach().cpu().numpy())
+        hf.create_dataset("S", data = A_v_cave.detach().cpu().numpy())
 
         with torch.no_grad():
-            Y = torch.zeros(2048, 578, 673)
-            X = torch.zeros(2048, 578, 673)
+            Y = torch.zeros(2048, 578, 673, dtype = torch.float32)
+            X = torch.zeros(2048, 37, dtype = torch.float32)
 
-            Y[inds,:,:] = D @ A_v
-            X[inds,:,:] = D
+            Y[inds,:,:] = torch.matmul(min_D, (F.relu(min_A) * cave(min_A, low = 0, high = 1,  mean = 5 / 37, var = 40 / 333, sparse = True))).reshape(min_D.shape[0], 578, 673).detach().cpu()
+            X[inds,:] = F.relu(min_D).detach().cpu()
 
-            hf.create_dataset("XRF", data = Y.cpu().numpy())
-            hf.create_dataset("D", data = X.detach().cpu().numpy())
+            hf.create_dataset("XRF", data = Y.numpy())
+            hf.create_dataset("D", data = X.numpy())
 
 
 if(__name__ == "__main__"):
