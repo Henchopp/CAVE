@@ -33,7 +33,7 @@ def train(xrf_path, thresh, M, epochs = 100):
 
     with h5py.File("/home/prs5019/cave/cave_data/A_raster0,05_all.h5") as hf:
         A_data = np.array(hf["data"][:], dtype = np.float32)
-        A_data[A_data == 0] = -1 * np.random.uniform(0, 1.0e-6)
+        # A_data[A_data == 0] = -1 * np.random.uniform(0, 1.0e-6)
         A_data = torch.from_numpy(A_data).to(device)
 
     D = torch.nn.Parameter(data = D_data, requires_grad = True)
@@ -43,7 +43,7 @@ def train(xrf_path, thresh, M, epochs = 100):
 
     optimizer = torch.optim.Adam([D, A], lr = 1.0e-6, betas = (0.9, 0.999))
 
-    cave = CAVE(func = Sigmoid(), n_step_nm = 15, n_step_gd = 5).to(device)
+    cave = CAVE(func = Sigmoid(), n_step_nm = 20, n_step_gd = 5).to(device)
 
     # ================= smoothing initializations ======================
 
