@@ -110,9 +110,8 @@ def train(xrf_path, thresh, M, epochs = 100):
         if(e != 0 and e % 10 == 0):
 
             # see if we should break
-            if(100 * (1 - last_10 / prev_last_10) < 1.0e-5 and e != 10):
-                # break
-                pass
+            if(100 * (1 - last_10 / prev_last_10) < 1.0e-8 and e != 10):
+                break
 
             prev_last_10 = last_10
             last_10 = 0
