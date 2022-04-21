@@ -64,8 +64,8 @@ class CAVE(torch.nn.Module):
 		da, db = self.nsab(x, a, b, self.func, mean, var, dim, unbiased, self.lr_nm)
 		return da, db
 
-	def forward(self, x, low = None, high = None, mean = None, var = None, sparse = False,
-	            dim = None, unbiased = True):
+	def forward(self, x, low = None, high = None, mean = None, var = None, dim = None,
+	            unbiased = True):
 
 		# Select optimization methods
 		if mean and var:
@@ -121,7 +121,7 @@ class CAVE(torch.nn.Module):
 		x = (x - x.mean(**dim)) / x.std(**dim)
 
 		# Spread data if sparse output required
-		if sparse:
+		if mean != None and var != None and var > 0.97 * (self.func.high - mean) * (mean - self.func.low):
 			if mean is not None and mean > 0.5 * (self.func.low + self.func.high):
 				x = (x - x.std(**dim) - 1) ** 3
 				x = (x - x.mean(**dim)) / x.std(**dim)
