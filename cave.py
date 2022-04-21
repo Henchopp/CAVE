@@ -10,7 +10,7 @@ class CAVE(torch.nn.Module):
 	"""docstring for CAVE"""
 
 	def __init__(self, func, n_step_gd = 10, n_step_nm = 20, lr_gd = 2.0, lr_nm = 1.0,
-	             a_init = 1.0, b_init = 0.0, output_log = False):
+	             a_init = 1.0, b_init = 0.0):
 		super(CAVE, self).__init__()
 
 		# Initialize activation functions
@@ -37,18 +37,6 @@ class CAVE(torch.nn.Module):
 		self.nsa = NSA()
 		self.nsb = NSB()
 		self.nsab = NSAB()
-
-		# Output log
-		self.log = output_log
-		if output_log:
-			self.log = []
-			self.log_dir = os.path.join(os.path.dirname(os.getcwd()),
-			                            'matlab',
-			                            'output_logs',
-			                            output_log)
-			if not os.path.exists(self.log_dir):
-				os.makedirs(self.log_dir)
-			self.log.append([n_step_gd, n_step_nm])
 
 
 	# Basic transforms
@@ -174,9 +162,6 @@ class CAVE(torch.nn.Module):
 			if db is not None:
 				b = b - db
 
-			if self.log:
-				self.log.append([a.item(), b.item()])
-
 		# Newton's method
 		for _ in range(self.n_step_nm):
 			da, db = func_nm(x, a, b, low, high, mean, var, dim, unbiased)
@@ -184,16 +169,6 @@ class CAVE(torch.nn.Module):
 				a = a - da
 			if db is not None:
 				b = b - db
-
-			if self.log:
-				self.log.append([a.item(), b.item()])
-
-		if self.log:
-			np.savetxt(os.path.join(self.log_dir, 'ab.csv'),
-			           np.array(self.log),
-			           delimiter = ',')
-			np.savetxt(os.path.join(self.log_dir, 'x.csv'),
-			           x.view(-1, 1).detach().numpy())
 
 		# Postprocess mean and var
 		if not (self.func.low == low and self.func.high == high):
@@ -219,16 +194,6 @@ class CAVE(torch.nn.Module):
 	# Forward
 	def forward(self, x, low = None, high = None, mean = None, var = None,
 	            sparse = False, dim = None, unbiased = True):
-
-		# Log input
-		if isinstance(self.log, list):
-			if mean is not None and var is not None:
-				self.log.append([mean, var])
-			elif mean is not None:
-				self.log.append([mean, float('nan')])
-			else:
-				self.log.append([float('nan'), var])
-			self.log.append([self.a_init.item(), self.b_init.item()])
 
 		# Dimension processing
 		if dim is None:
