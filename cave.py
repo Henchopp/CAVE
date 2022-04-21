@@ -39,34 +39,6 @@ class CAVE(torch.nn.Module):
 		self.nsab = NSAB()
 
 
-	# Basic transforms
-	def opt_low(self, x, low):
-		if self.func.low:
-			return self.func.fx(x) - self.func.low + low
-		elif self.func.high:
-			return -1.0 * (self.func.fx(x) - self.func.high) + low
-
-	def opt_high(self, x, high):
-		if self.func.low:
-			return -1.0 * (self.func.fx(x) - self.func.low) + high
-		elif self.func.high:
-			return self.func.fx(x) - self.func.high + high
-
-	def opt_mean(self, x, mean, dim):
-		return x - x.mean(**dim) + mean
-
-	def opt_var(self, x, var, dim, unbiased):
-		return (var / x.var(unbiased = unbiased, **dim)).sqrt() * x
-
-	def opt_range(self, x, low, high):
-		if self.func.low and self.func.high:
-			rng = self.func.high - self.func.low
-			return (high - low) * (self.func.fx(x) - self.func.low) / rng + low
-
-	def opt_moments(self, x, mean, var, dim, unbiased):
-		return (var / x.var(unbiased = unbiased, **dim)).sqrt() * (x - x.mean(**dim)) + mean
-
-
 	# CAVE transforms
 	def opt_grad_mean(self, x, a, b, low, high, mean, var, dim, unbiased):
 		db = self.gsb(x, a, b, self.func, mean, dim, self.lr_gd)
@@ -92,7 +64,8 @@ class CAVE(torch.nn.Module):
 		da, db = self.nsab(x, a, b, self.func, mean, var, dim, unbiased, self.lr_nm)
 		return da, db
 
-	def opt_cave(self, x, low, high, mean, var, sparse, dim, unbiased):
+	def forward(self, x, low = None, high = None, mean = None, var = None, sparse = False,
+	            dim = None, unbiased = True):
 
 		# Select optimization methods
 		if mean and var:
@@ -104,6 +77,13 @@ class CAVE(torch.nn.Module):
 		elif var:
 			func_gd = self.opt_grad_var
 			func_nm = self.opt_newton_var
+
+		# Dimension processing
+		if dim is None:
+			dim = [i for i in range(x.ndim)]
+		elif isinstance(dim, int):
+			dim = [dim]
+		dim = {'dim': dim, 'keepdim': True}
 
 		# Preprocess mean and var
 		if not (self.func.low == low and self.func.high == high):
@@ -189,35 +169,6 @@ class CAVE(torch.nn.Module):
 					return self.func.fx(a * x + b) - self.func.high + high
 
 		return self.func.fx(a * x + b)
-
-
-	# Forward
-	def forward(self, x, low = None, high = None, mean = None, var = None,
-	            sparse = False, dim = None, unbiased = True):
-
-		# Dimension processing
-		if dim is None:
-			dim = [i for i in range(x.ndim)]
-		elif isinstance(dim, int):
-			dim = [dim]
-		dim = {'dim': dim, 'keepdim': True}
-
-		# Select CAVE method
-		if (low != None or high != None) and (mean != None or var != None):
-			return self.opt_cave(x, low, high, mean, var, sparse, dim, unbiased)
-		elif low != None and high != None:
-			return self.opt_range(x, low, high)
-		elif low != None:
-			return self.opt_low(x, low)
-		elif high != None:
-			return self.opt_high(x, high)
-		elif mean != None and var != None:
-			return self.opt_moments(x, mean, var, dim, unbiased)
-		elif mean != None:
-			return self.opt_mean(x, mean, dim)
-		elif var != None:
-			return self.opt_var(x, var, dim, unbiased)
-		return x
 
 
 ##########################
