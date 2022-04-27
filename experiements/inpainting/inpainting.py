@@ -44,7 +44,7 @@ def train(epochs = 100):
 
     model.train()
 
-    optimizer torch.optim.Adam(model.parameters(), lr = 1.0e-3, betas = (0.9, 0.999))
+    optimizer = torch.optim.Adam(model.parameters(), lr = 1.0e-3, betas = (0.9, 0.999))
 
 
     for e in range(epochs):
