@@ -10,7 +10,7 @@ class CAVE(torch.nn.Module):
 	"""docstring for CAVE"""
 
 	def __init__(self, low = None, high = None, mean = None, var = None, func = None, 
-	             dim = None, unbiased = True, n_step_gd = 10, n_step_nm = 20, lr_gd = 2.0, 
+	             dim = None, unbiased = True, n_step_gd = 5, n_step_nm = 10, lr_gd = 1.0, 
 	             lr_nm = 1.0, a_init = 1.0, b_init = 0.0):
 		super(CAVE, self).__init__()
 
