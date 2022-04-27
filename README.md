@@ -4,101 +4,103 @@ Controlled Average, Variance, and Extrema (CAVE) functions are a class of functi
 
 ## About CAVE
 
-The basis of CAVE is finding a linear transform of the input data prior to feeding it to a nonlinear, range-limited function *f*.
-CAVE solves
-- *target_mean = mean(f(aX + b))* and
-- *target_var = var(f(aX + b))*
+The basis of CAVE is finding a linear transform of the input data `X` prior to feeding it to an activation function *f*.
+The output `Y` has the following characteristics
+- `Y.amin() >= low`
+- `Y.amax() <= high`
+- `(Y.mean() - mean).abs() < eps`
+- `(Y.var() - var).abs() < eps`
+where `[low, high, mean, var]` are user-defined.
 
-for variables *a* and *b* using a combination of gradient descent and Newton's method.
+The CAVE function has the following form when `low` and `high` are finite:
+```
+CAVE(X) = (high - low) / (fmax - fmin) * (f(a * X + b) - fmin) + low
+```
+where `a` and `b` are found to minimize the mean-squared error between the mean and variance.
+Both `a` and `b` are the results of gradient descent and Newton's second order optimization.
 
-CAVE optimization can be used during training of neural networks.
-It has a fully implemented numerical solver as well as the backward method for the input data (i.e. the derivative of gradient descent and Newton's method themselves w.r.t. the input data).
-This makes it a more memory-efficient algorithm allowing more CAVE optimization steps to be taken.
+CAVE optimization can be used during training of neural networks since gradient descent and Newton's method optimization of `a` and `b` are themselves differentiable with respect to `X`.
+Efficient implementations of the backwards method results in faster calculations and with fewer memory requirements.
 
 ## Using CAVE Functions
 
-There are two important steps in using CAVE functions, namely the initialization of the class `CAVE` and the `forward` method parameters.
+The important steps in using CAVE are the initialization of the class `CAVE` and its `forward` function.
+Class `CAVE` inherits from `torch.nn.Module` and can be used as a regular activation function.
 
 ### Initializing a `CAVE` Instance
 
-There are 8 input arguments for initialization, namely:
-- `func` (required): The base CAVE function inherited from `CAVEBaseFunction`
-- `n_step_gd` (optional): The number of gradient descent steps to take
-- `n_step_nm` (optional): The number of Newton's method steps to take
-- `lr_gd` (optional): The learning rate of gradient descent
-- `lr_nm` (optional): The learning rate of Newton's method
-- `a_init` (optional): The starting value for `a`
-- `b_init` (optional): The starting value for `b`
-- `output_log` (optional): Logs the output for visualization in MATLAB (see `matlab/plot_loss.m`)
-
-For sparse outputs, we recommend using `Sigmoid` from `cave_base_functions.py`.
-Otherwise, feel free to use `Softplus` or code your own (see section below).
+There are 13 input arguments for initializing `CAVE` that are all optional.
+At least three of `low`, `high`, `mean`, and `var` must be specified however.
+The arguments are:
+- `low` (`float` or `torch.Tensor`): The lower bound of the desired output range. If no desired lower bound, specify `None`. Default: `None`.
+- `high` (`float` or `torch.Tensor`): The upper bound of the desired output range. If no desired upper bound, specify `None`. Default: `None`.
+- `mean` (`float` or `torch.Tensor`): The mean of the desired output. If no desired mean, specify `None`. Default: `None`.
+- `var` (`float` or `torch.Tensor`): The variance of the desired output. If no desired variance, specify `None`. Default: `None`.
+- `func` (`CAVEBaseFunction`): The base CAVE function. Default when `low` xor `high` is specified is `Softplus`. Default when `low` and `high` is specified is `Sigmoid`.
+- `dim` (`None`, `int`, or list of `int`): The dimension(s) to apply CAVE over. `None` applies CAVE over all dimensions. Default: `None`.
+- `unbiased` (`bool`): Indicates if the variance is calculated with Bessel's correction (`True`) or without `False`. Default: `True`.
+- `n_step_gd` (`int`): The number of gradient descent steps to take. Default: `5`.
+- `n_step_nm` (`int`): The number of Newton's method steps to take. Default: `10`.
+- `lr_gd` (`float`): The learning rate of gradient descent. Default: `1.0`.
+- `lr_nm` (`float`): The learning rate of Newton's method. Default: `1.0`.
+- `a_init` (`float` or `torch.Tensor`): The starting value for `a`. Default: `1.0`.
+- `b_init` (`float` or `torch.Tensor`): The starting value for `b`. Default: `0.0`.
 
 ### Calling the `forward` Function of `CAVE`
 
 The `CAVE` class is inherited from `torch.nn.Module`, so calling `forward` is done in the same manner as other `torch.nn.Module` classes.
-The `forward` method takes 7 arguments:
-- `x` (required): The input data as a `torch.Tensor` of any shape
-- `low` (optional): The minimum *range* of the output (does not guarantee the minimum *value* of the output is `low`)
-- `high` (optional): The maximum *range* of the output (does not guarantee the maximum *value* of the output is `high`)
-- `mean` (optional): The desired mean of the output
-- `var` (optional): The desired variance of the output (use *biased* variance)
-- `sparse` (optional): A boolean indicating whether the output data is expected to be sparse, as it applies a transform to improve the stability of the algorithm (used particularly with large data)
-- `dim` (optional): The dimension across which to apply CAVE (similar to `torch.mean` and the like)
+The `forward` method takes 1 required argument:
+- `x` (`torch.Tensor`): The input data.
 
 ### Example
 
-Suppose we have are doing single class classification of MNIST data using a neural network.
-Our final output is a one-hot vector of size 10 per input image.
-During training, assume we use a batch size of 500.
-Our output is therefore 10 x 500.
-
-Each column ideally would have a 1 in the correct bin and 0's everywhere else.
-The relevant information for `CAVE` is as follows:
-- `low = 0.0` as each entry represents a probability
-- `high = 1.0` as each entry represents a probability
-- `mean = 0.1` as the mean for the one-hot vector of size 10
-- `var = 0.09` as the *biased* variance for the one-hot vector of size 10
-- `sparse = True` as we expect a sparse output
-- `dim = 0` as we only want to sparsify the columns
-
-This makes `CAVE` a perfect candidate for a final activation layer.
-We can code up a `CAVE` activation as follows:
+Suppose we are training a neural network that restores RGB images where the mean and variance of each image are known.
+During training, we would have a batch `ims` of size `N x 3 x H x W`, the corresponding mean values `means` of size `N`, and the corresponding variance values `vars` of size `N`.
+We can create a `CAVE` instance by coding the following:
 ```
-import torch.nn as nn
-from my_network import MyNet
-from cave import CAVE
-from cave_base_functions import Sigmoid
-
-
-class MyCAVENetwork(nn.Module):
-	def __init__(self):
-		super(MYCAVENetwork, self).__init__()
-		self.my_net = MyNet()
-		self.cave = CAVE(func = Sigmoid())
-
-	def forward(self, x):
-		x = self.my_net(x)
-		x = self.cave(x, low = 0.0, high = 1.0, mean = 0.1, var = 0.09, sparse = True, dim = 0)
-		return x
+low = 0.0
+high = 1.0
+cave = CAVE(low = low,
+	        high = high,
+	        mean = means,
+	        var = vars,
+	        dim = [1,2,3])
 ```
+We can then use `cave` by
+```
+output = cave(ims)
+```
+where the following would evaluate to `True`:
+- `output.amin() >= low`
+- `output.amax() <= high`
+- `((output.mean() - mean).abs() < eps).all()`
+- `((Y.var() - var).abs() < eps).all()`
+for some small `eps`.
 
 ## Custom CAVE Base Functions
 
 It's easy to create new base functions for CAVE applications.
 To do so, you must create a class that inherits `CAVEBaseFunction` from `cave_base_functions.py`.
-All you need to provide are methods for the function and its first three derivatives as well as the minimum and maximum values of the function's range.
+All you need to provide are methods for the function and its first three derivatives as well as the minimum and/or maximum values of the function's range.
+
+To work properly, a `CAVEBaseFunction` must have the following properties:
+- It operates element-wise
+- Its range is semi-infinite or finite
+- It is strictly increasing (or decreasing)
+- It is smooth and continuous
 
 ### Example
 
-Your new base function must override four methods:
+Your new base function must specify at least one of `low` and `high`.
+Additionally, you must code these four methods:
 - `fx(self, x)`, the function itself
 - `dfx(self, x)`, the first derivative
 - `d2fx(self, x)`, the second derivative
 - `d3fx(self, x)`, the third derivative
 
+Keep in mind that these four functions should operate element-wise on any size `torch.Tensor`.
 You should *not* take into consideration the linear transform as it has been implemented for you.
-For example, sigmoid is implemented in `cave_base_functions.py` simply as
+For example, `Sigmoid` is implemented simply as
 ```
 class Sigmoid(CAVEBaseFunction):
 
@@ -126,4 +128,4 @@ class Sigmoid(CAVEBaseFunction):
 		return sig * (1 - sig) * (6 * sig * (sig - 1) + 1)
 ```
 in its entirety.
-Note that it inherits from CAVEBaseFunction, which will automatically calculate the derivatives with respect to the linear transform.
+Note that it inherits from `CAVEBaseFunction`, which automatically finds the `forward` and `backward` calculations needed to use CAVE.
