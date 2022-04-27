@@ -105,10 +105,10 @@ class Decoder(nn.Module):
 
         self.conv1 = ConvBatchReLU(4, 16)
         self.dconv1 = DeconvBatchReLU(16, 16)
-​
+
         self.conv2 = ConvBatchReLU(16, 16)
         self.dconv2 = DeconvBatchReLU(16, 16)
-​
+
         self.conv3 = ConvBatchReLU(16, 16)
         self.dconv3 = nn.ConvTranspose2d(in_channels = 16,
 		                                 out_channels = 3,
@@ -116,7 +116,7 @@ class Decoder(nn.Module):
 		                                 stride = 2,
 		                                 padding = 1,
 		                                 bias = True)
-
+                                         
     def forward(self, x):
         # === mlp ===
         x = self.bn1(self.fc1(x))
