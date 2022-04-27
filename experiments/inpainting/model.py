@@ -7,11 +7,11 @@ from CAVE.utils.cave_base_functions import Sigmoid
 
 class BatchConvReLU(nn.Module):
 
-    def __init__(self, in, out, ksize = 3):
+    def __init__(self, inp, out, ksize = 3):
         super(BatchConvReLU, self).__init__()
 
         self.conv = nn.Conv2d(
-            in_channels = in,
+            in_channels = inp,
             out_channels = out,
             kernel_size = ksize,
             stride = 1,
@@ -29,11 +29,11 @@ class BatchConvReLU(nn.Module):
 
 class BatchDeconvReLU(nn.Module):
 
-    def __init__(self, in, out, ksize = 4):
+    def __init__(self, inp, out, ksize = 4):
         super(BatchDeconvReLU, self).__init__()
 
         self.dconv = nn.ConvTranspose2d(
-            in_channels = in,
+            in_channels = inp,
             out_channels = out,
             kernel_size = ksize,
             stride = 2,
