@@ -16,7 +16,7 @@ class BatchConvReLU(nn.Module):
             kernel_size = ksize,
             stride = 1,
             padding = 1,
-            padding_mode = "replicate",
+            # padding_mode = "replicate",
             bias = False
         )
 
@@ -68,7 +68,7 @@ class Encoder(nn.Module):
 
         # ======= MLP =======
 
-        self.fc1 = nn.Linear(27648, 1024)
+        self.fc1 = nn.Linear(573122304, 1024)
         self.fc2 = nn.Linear(1024, encoding_space) # should output vector in encoded space
 
     def forward(self, x):
@@ -86,7 +86,6 @@ class Encoder(nn.Module):
         x = torch.flatten(x)
 
         # === mlp ===
-
         x = self.fc1(x)
         x = self.fc2(x)
 
