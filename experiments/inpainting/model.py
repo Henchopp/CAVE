@@ -48,9 +48,9 @@ class BatchDeconvReLU(nn.Module):
         return self.norm(F.relu(self.dconv(x)))
 
 
-class Encoder(nn.Module, encoding_space = 100):
+class Encoder(nn.Module):
 
-    def __init__(self):
+    def __init__(self, encoding_space = 100):
         super(Encoder, self).__init__()
 
         # layer 1
@@ -116,7 +116,7 @@ class Decoder(nn.Module):
 		                                 stride = 2,
 		                                 padding = 1,
 		                                 bias = True)
-                                         
+
     def forward(self, x):
         # === mlp ===
         x = self.bn1(self.fc1(x))
@@ -134,7 +134,8 @@ class Decoder(nn.Module):
 class AutoEncoder(nn.Module):
 
     def __init__(self, encoding_space = 100):
-
+        super(AutoEncoder, self).__init__()
+        
         self.encoder = Encoder(encoding_space = encoding_space)
         self.decoder = Decoder(encoding_space = encoding_space)
 
