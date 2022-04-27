@@ -103,13 +103,13 @@ class Decoder(nn.Module):
         self.fc2 = nn.Linear(1024, 27648)
         self.bn2 = nn.BatchNorm1d(num_features = 27648)
 
-        self.conv1 = ConvBatchReLU(4, 16)
-        self.dconv1 = DeconvBatchReLU(16, 16)
+        self.conv1 = BatchConvReLU(4, 16)
+        self.dconv1 = BatchDeconvReLU(16, 16)
 
-        self.conv2 = ConvBatchReLU(16, 16)
-        self.dconv2 = DeconvBatchReLU(16, 16)
+        self.conv2 = BatchConvReLU(16, 16)
+        self.dconv2 = BatchDeconvReLU(16, 16)
 
-        self.conv3 = ConvBatchReLU(16, 16)
+        self.conv3 = BatchConvReLU(16, 16)
         self.dconv3 = nn.ConvTranspose2d(in_channels = 16,
 		                                 out_channels = 3,
 		                                 kernel_size = 4,
@@ -135,7 +135,7 @@ class AutoEncoder(nn.Module):
 
     def __init__(self, encoding_space = 100):
         super(AutoEncoder, self).__init__()
-        
+
         self.encoder = Encoder(encoding_space = encoding_space)
         self.decoder = Decoder(encoding_space = encoding_space)
 
