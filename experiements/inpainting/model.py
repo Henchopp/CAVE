@@ -130,3 +130,22 @@ class Decoder(nn.Module):
         x = self.dconv2(self.conv2(x))
 
         return self.dconv3(self.conv3)
+
+class AutoEncoder(nn.Module):
+
+    def __init__(self, encoding_space = 100):
+
+        self.encoder = Encoder(encoding_space = encoding_space)
+        self.decoder = Decoder(encoding_space = encoding_space)
+
+    def forward(self, x):
+
+        return self.decoder(self.encoder(x))
+
+    def encode(self, x):
+
+        return self.encoder(x)
+
+    def decode(self, x):
+
+        return self.decoder(x)
