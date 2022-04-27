@@ -22,7 +22,7 @@ class ImageNetData(Dataset):
 
     def __getitem__(self, idx):
 
-        file_path = os.path.join(directory, self.file_names[idx])
+        file_path = os.path.join(self.directory, self.file_names[idx])
 
         img = Image.open(file_path).convert("RGB")
         np_img = np.array(img)
