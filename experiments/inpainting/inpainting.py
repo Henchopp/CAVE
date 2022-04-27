@@ -1,4 +1,4 @@
-from CAVE.experiments.model import AutoEncoder
+from model import AutoEncoder
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 import torch.nn as nn
