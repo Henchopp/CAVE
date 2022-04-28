@@ -135,19 +135,6 @@ class CAVE(torch.nn.Module):
 		# Standard normalize input
 		x = (x - x.mean(**self._dim)) / x.std(**self._dim)
 
-		# Spread data if sparse output required
-		# if self.mean != None and self.var != None and self.var > 0.97 * (self.high - self.mean) * (self.mean - self.low):
-		# 	if self._mean is not None and self._mean > 0.5 * (self.func.low + self.func.high):
-		# 		x = (x - x.std(**self._dim) - 1) ** 3
-		# 		x = (x - x.mean(**self._dim)) / x.std(**self._dim)
-		# 		x = x + x.std(**self._dim)
-		# 	elif self._mean != None and self._mean <= 0.5 * (self.func.low + self.func.high):
-		# 		x = (x + x.std(**self._dim) + 1) ** 3
-		# 		x = (x - x.mean(**self._dim)) / x.std(**self._dim)
-		# 		x = x - x.std(**self._dim)
-		# 	elif self._var != None:
-		# 		x = x * 10
-
 		# Gradient descent
 		for _ in range(self.n_step_gd):
 			da, db = func_gd(x, a, b)
