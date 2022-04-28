@@ -121,9 +121,9 @@ class CAVE(torch.nn.Module):
 
 		# Dimension processing
 		self._dim = {'keepdim': True}
-		if self.dim is None:
+		if self.dim == None:
 			self._dim['dim'] = [i for i in range(x.ndim)]
-		elif isinstance(dim, int):
+		elif isinstance(self.dim, int):
 			self._dim['dim'] = [self.dim]
 		else:
 			self._dim['dim'] = self.dim
@@ -136,17 +136,17 @@ class CAVE(torch.nn.Module):
 		x = (x - x.mean(**self._dim)) / x.std(**self._dim)
 
 		# Spread data if sparse output required
-		if self.mean != None and self.var != None and self.var > 0.97 * (self.high - self.mean) * (self.mean - self.low):
-			if self._mean is not None and self._mean > 0.5 * (self.func.low + self.func.high):
-				x = (x - x.std(**self._dim) - 1) ** 3
-				x = (x - x.mean(**self._dim)) / x.std(**self._dim)
-				x = x + x.std(**self._dim)
-			elif self._mean != None and self._mean <= 0.5 * (self.func.low + self.func.high):
-				x = (x + x.std(**self._dim) + 1) ** 3
-				x = (x - x.mean(**self._dim)) / x.std(**self._dim)
-				x = x - x.std(**self._dim)
-			elif self._var != None:
-				x = x * 10
+		# if self.mean != None and self.var != None and self.var > 0.97 * (self.high - self.mean) * (self.mean - self.low):
+		# 	if self._mean is not None and self._mean > 0.5 * (self.func.low + self.func.high):
+		# 		x = (x - x.std(**self._dim) - 1) ** 3
+		# 		x = (x - x.mean(**self._dim)) / x.std(**self._dim)
+		# 		x = x + x.std(**self._dim)
+		# 	elif self._mean != None and self._mean <= 0.5 * (self.func.low + self.func.high):
+		# 		x = (x + x.std(**self._dim) + 1) ** 3
+		# 		x = (x - x.mean(**self._dim)) / x.std(**self._dim)
+		# 		x = x - x.std(**self._dim)
+		# 	elif self._var != None:
+		# 		x = x * 10
 
 		# Gradient descent
 		for _ in range(self.n_step_gd):
