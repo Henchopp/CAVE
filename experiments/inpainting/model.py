@@ -54,21 +54,21 @@ class Encoder(nn.Module):
         super(Encoder, self).__init__()
 
         # layer 1
-        self.conv1 = BatchConvReLU(3, 18)
+        self.conv1 = BatchConvReLU(3, 16)
         # layer 2
-        self.conv2 = BatchConvReLU(18, 36)
-        self.mpool1 = nn.MaxPool2d(kernel_size = 2, stride = 1)
+        self.conv2 = BatchConvReLU(16, 32)
+        self.mpool1 = nn.MaxPool2d(kernel_size = 2, stride = 2)
         # layer 3
-        self.conv3 = BatchConvReLU(36, 108)
+        self.conv3 = BatchConvReLU(32, 64)
         # layer 4
-        self.conv4 = BatchConvReLU(108, 108)
+        self.conv4 = BatchConvReLU(64, 64)
         # layer 5
-        self.conv5 = BatchConvReLU(108, 108)
-        self.mpool2 = nn.MaxPool2d(kernel_size = 2, stride = 1)
+        self.conv5 = BatchConvReLU(64, 64)
+        self.mpool2 = nn.MaxPool2d(kernel_size = 2, stride = 2)
 
         # ======= MLP =======
 
-        self.fc1 = nn.Linear(27648, 1024)
+        self.fc1 = nn.Linear(16 ** 2 * 64, 1024)
         self.fc2 = nn.Linear(1024, encoding_space) # should output vector in encoded space
 
     def forward(self, x):
