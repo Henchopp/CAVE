@@ -74,7 +74,6 @@ class Encoder(nn.Module):
     def forward(self, x):
 
         # === convolving ===
-
         x = self.conv1(x)
         x = self.mpool1(self.conv2(x))
         x = self.conv3(x)
@@ -82,7 +81,6 @@ class Encoder(nn.Module):
         x = self.mpool2(self.conv5(x))
 
         # === flattening ===
-
         x = torch.flatten(x)
 
         # === mlp ===
@@ -119,7 +117,7 @@ class Decoder(nn.Module):
     def forward(self, x):
         # === mlp ===
         x = self.bn1(self.fc1(x))
-        x = self.bn2(self.bn2(x))
+        x = self.bn2(self.fc2(x))
 
         # === reshape ===
         x = x.reshape(4, 108, 108)
