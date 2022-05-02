@@ -115,6 +115,7 @@ class Decoder(nn.Module):
 		                                 bias = True)
 
     def forward(self, x):
+        print(x.shape)
         # === mlp ===
         x = self.bn1(self.fc1(x))
         x = self.bn2(self.fc2(x))
