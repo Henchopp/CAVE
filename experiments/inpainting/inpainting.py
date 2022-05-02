@@ -54,7 +54,7 @@ def train(epochs = 100):
             feat = feat.float().to(device)
 
             optimizer.zero_grad()
-
+            print(model(feat).shape, feat.shape)
             loss = F.mse_loss(model(feat), feat) # getting mean squared error loss
 
             loss.backward() # backwards sweep
