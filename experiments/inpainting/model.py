@@ -86,7 +86,7 @@ class Encoder(nn.Module):
         # === mlp ===
         x = self.fc1(x)
         x = self.fc2(x)
-
+        print(x.shape)
         return x
 
 class Decoder(nn.Module):
