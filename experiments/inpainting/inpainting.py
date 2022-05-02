@@ -26,7 +26,7 @@ class ImageNetData(Dataset):
 
         file_path = os.path.join(self.directory, self.file_names[idx])
 
-        img = torchvision.io.read_image(file_path).float() / 255
+        img = torchvision.io.read_image(file_path).float64() / 255
 
         return self.crop(img)
 
