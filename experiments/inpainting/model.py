@@ -72,7 +72,7 @@ class Encoder(nn.Module):
         self.fc2 = nn.Linear(1024, encoding_space, bias = True) # should output vector in encoded space
 
     def forward(self, x):
-        print(x.shape)
+
         # === convolving ===
         x = self.conv1(x)
         x = self.mpool1(self.conv2(x))
@@ -81,12 +81,12 @@ class Encoder(nn.Module):
         x = self.mpool2(self.conv5(x))
 
         # === flattening ===
-        x = torch.flatten(x)
+        x = x.reshape(x.shape[0], -1)
 
         # === mlp ===
         x = self.fc1(x)
         x = self.fc2(x)
-        print(x.shape)
+
         return x
 
 class Decoder(nn.Module):
@@ -115,7 +115,7 @@ class Decoder(nn.Module):
 		                                 bias = True)
 
     def forward(self, x):
-        print(x.shape)
+
         # === mlp ===
         x = self.bn1(self.fc1(x))
         x = self.bn2(self.fc2(x))
