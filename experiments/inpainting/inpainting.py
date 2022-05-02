@@ -1,6 +1,7 @@
 from model import AutoEncoder
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
+import torchvision
 import torch.nn as nn
 from PIL import Image
 import numpy as np
@@ -16,6 +17,7 @@ class ImageNetData(Dataset):
 
         self.directory = directory
         self.file_names = os.listdir(directory)
+        self.crop = torchvision.transforms.RandomCrop(64)
 
     def __len__(self):
 
@@ -25,11 +27,9 @@ class ImageNetData(Dataset):
 
         file_path = os.path.join(self.directory, self.file_names[idx])
 
-        img = Image.open(file_path).convert("RGB").resize((335, 500))
-        np_img = np.array(img)
-        img.close()
+        img = torchvision.io.read_image(file_path).float() / 255
 
-        return torch.from_numpy(np_img).permute(2, 0, 1)
+        return self.crop(img)
 
 def train(epochs = 100):
 
