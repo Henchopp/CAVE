@@ -3,7 +3,6 @@ import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 import torchvision
 import torch.nn as nn
-from PIL import Image
 import numpy as np
 import torch
 import os
