@@ -63,7 +63,7 @@ class Encoder(nn.Module):
         # layer 4
         self.conv4 = BatchConvReLU(64, 64)
         # layer 5
-        self.conv5 = BatchConvReLU(64, 64)
+        self.conv5 = BatchConvReLU(64, 16)
         self.mpool2 = nn.MaxPool2d(kernel_size = 2, stride = 2)
 
         # ======= MLP =======
