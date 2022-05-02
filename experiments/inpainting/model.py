@@ -68,8 +68,8 @@ class Encoder(nn.Module):
 
         # ======= MLP =======
 
-        self.fc1 = nn.Linear(5312000, 1024)
-        self.fc2 = nn.Linear(1024, encoding_space) # should output vector in encoded space
+        self.fc1 = nn.Linear(5312000, 1024, bias = True)
+        self.fc2 = nn.Linear(1024, encoding_space, bias = True) # should output vector in encoded space
 
     def forward(self, x):
         print(x.shape)
