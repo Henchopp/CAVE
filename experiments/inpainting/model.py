@@ -68,7 +68,7 @@ class Encoder(nn.Module):
 
         # ======= MLP =======
 
-        self.fc1 = nn.Linear(21248000, 1024)
+        self.fc1 = nn.Linear(16 ** 2 * 64, 1024)
         self.fc2 = nn.Linear(1024, encoding_space) # should output vector in encoded space
 
     def forward(self, x):
