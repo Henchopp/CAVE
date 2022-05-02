@@ -16,7 +16,8 @@ if(__name__ == "__main__"):
 
     def clean_dir(dir_name):
         for img in os.listdir(os.path.join(args.directory, dir_name)):
-            width, height = Image.open(os.path.join(args.directory, "train", img)).size
+            print(os.path.join(args.directory, dir_name, img))
+            width, height = Image.open(os.path.join(args.directory, dir_name, img)).size
 
             if(width < 64 or height < 64):
                 os.remove(os.path.join(args.directory, dir_name, img))
