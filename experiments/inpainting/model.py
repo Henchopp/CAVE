@@ -72,7 +72,7 @@ class Encoder(nn.Module):
         self.fc2 = nn.Linear(1024, encoding_space) # should output vector in encoded space
 
     def forward(self, x):
-
+        print(x.shape)
         # === convolving ===
         x = self.conv1(x)
         x = self.mpool1(self.conv2(x))
