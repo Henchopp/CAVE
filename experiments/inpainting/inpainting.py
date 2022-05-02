@@ -8,6 +8,7 @@ import torch
 import os
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Using {device}")
 
 class ImageNetData(Dataset):
 
@@ -24,18 +25,18 @@ class ImageNetData(Dataset):
 
         file_path = os.path.join(self.directory, self.file_names[idx])
 
-        img = Image.open(file_path).convert("RGB")
+        img = Image.open(file_path).convert("RGB").resize((335, 500))
         np_img = np.array(img)
         img.close()
 
-        return torch.from_numpy(np_img)
+        return torch.from_numpy(np_img).permute(2, 0, 1)
 
 def train(epochs = 100):
 
     train = ImageNetData("/home/prs5019/cave/image_net/train")
     valid = ImageNetData("/home/prs5019/cave/image_net/valid")
 
-    train_loader = DataLoader(train, batch_size = 64, shuffle = True, num_workers = 16)
+    train_loader = DataLoader(train, batch_size = 32, shuffle = True, num_workers = 16)
     valid_loader = DataLoader(valid, batch_size = 32, shuffle = True, num_workers = 16)
 
     model = AutoEncoder()
@@ -51,11 +52,11 @@ def train(epochs = 100):
 
         for feat in train_loader:
 
-            feat = feat.to(device)
+            feat = feat.float().to(device)
 
             optimizer.zero_grad()
 
-            loss = F.mse(model(feat), feat) # getting mean squared error loss
+            loss = F.mse_loss(model(feat), feat) # getting mean squared error loss
 
             loss.backward() # backwards sweep
 
