@@ -97,8 +97,8 @@ class Decoder(nn.Module):
         self.fc1 = nn.Linear(encoding_space, 1024) # should take in encoded vector
         self.bn1 = nn.BatchNorm1d(num_features = 1024)
 
-        self.fc2 = nn.Linear(1024, 27648)
-        self.bn2 = nn.BatchNorm1d(num_features = 27648)
+        self.fc2 = nn.Linear(1024, 6912)
+        self.bn2 = nn.BatchNorm1d(num_features = 6912)
 
         self.conv1 = BatchConvReLU(3, 16)
         self.dconv1 = BatchDeconvReLU(16, 16)
@@ -121,7 +121,7 @@ class Decoder(nn.Module):
         x = self.bn2(self.fc2(x))
 
         # === reshape ===
-        x = x.reshape(32, 3, 96, 96)
+        x = x.reshape(32, 3, 48, 48)
 
         # === convolve ===
         x = self.dconv1(self.conv1(x))
