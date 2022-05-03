@@ -15,12 +15,19 @@ if(__name__ == "__main__"):
         sys.exit("directory is a required argument")
 
     def clean_dir(dir_name):
+
+        n_deleted = 0
+
         for img in os.listdir(os.path.join(args.directory, dir_name)):
 
-            width, height = Image.open(os.path.join(args.directory, dir_name, img)).size
+            im = Image.open(os.path.join(args.directory, dir_name, img))
+            width, height = im.size
 
-            if(width < 64 or height < 64):
+            if(width < 64 or height < 64 or len(im.mode) != 3):
                 os.remove(os.path.join(args.directory, dir_name, img))
+                n_deleted += 1
+
+        print(f"deleted {n_deleted} entries from {dir_name}")
 
     # training data
     clean_dir("train")
