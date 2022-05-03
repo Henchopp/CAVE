@@ -72,6 +72,7 @@ def train(epochs = 100):
                 loss = F.mse_loss(model(feat), feat)
 
                 valid_losses.append(loss.item())
+        print(f"Epoch {e} | Valid Loss {sum(valid_losses) / len(valid_losses)}")
 
 if(__name__ == "__main__"):
     train()
