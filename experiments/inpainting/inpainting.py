@@ -35,8 +35,8 @@ def train(epochs = 100):
     train = ImageNetData("/home/prs5019/cave/image_net/train")
     valid = ImageNetData("/home/prs5019/cave/image_net/valid")
 
-    train_loader = DataLoader(train, batch_size = 32, shuffle = True, num_workers = 16)
-    valid_loader = DataLoader(valid, batch_size = 32, shuffle = True, num_workers = 16)
+    train_loader = DataLoader(train, batch_size = 32, shuffle = True)
+    valid_loader = DataLoader(valid, batch_size = 32, shuffle = True)
 
     model = AutoEncoder()
 
@@ -50,11 +50,11 @@ def train(epochs = 100):
     for e in range(epochs):
 
         for feat in train_loader:
-
+            # print(feat.float().detach().cpu().numpy().tolist())
             feat = feat.float().to(device)
 
             optimizer.zero_grad()
-            print(model(feat).shape, feat.shape)
+
             loss = F.mse_loss(model(feat), feat) # getting mean squared error loss
 
             loss.backward() # backwards sweep
