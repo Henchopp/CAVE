@@ -50,7 +50,7 @@ def train(epochs = 100):
     for e in range(epochs):
 
         for feat in train_loader:
-
+            print(feat)
             feat = feat.float().to(device)
 
             optimizer.zero_grad()
