@@ -145,7 +145,13 @@ class AutoEncoder(nn.Module):
 
         if(self.cave is not None):
             output = self.decoder(self.encoder(x))
-            output = self.cave(output, low = 0.0, high = 1.0, mean = x.mean(), var = x.var(), sparse = False, dim = 1, unbiased = False)
+            output = self.cave(output,
+                            low = 0.0,
+                            high = 1.0,
+                            mean = x.mean(dim = [1, 2, 3], keepdim = True),
+                            var = x.var(dim  = [1, 2, 3], keepdim = True, unbiased = False), 
+                            dim = [1, 2, 3],
+                            unbiased = False)
         else:
             output = self.decoder(self.encoder(x))
 
