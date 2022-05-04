@@ -50,14 +50,18 @@ The arguments are:
 - `mean` (`float` or `torch.Tensor`): The mean of the desired output. If no desired mean, specify `None`. Default: `None`.
 - `var` (`float` or `torch.Tensor`): The variance of the desired output. If no desired variance, specify `None`. Default: `None`.
 - `func` (`CAVEBaseFunction`): The base CAVE function. Default when `low` xor `high` is specified is `Softplus`. Default when `low` and `high` is specified is `Sigmoid`.
-- `dim` (`None`, `int`, or list of `int`): The dimension(s) to apply CAVE over. `None` applies CAVE over all dimensions. Default: `None`.
+- `dim` (`None`, `int`, or `list` of `int`): The dimension(s) to apply CAVE over. `None` applies CAVE over all dimensions. Default: `None`.
 - `unbiased` (`bool`): Indicates if the variance is calculated with Bessel's correction (`True`) or without `False`. Default: `True`.
-- `n_step_gd` (`int`): The number of gradient descent steps to take. Default: `5`.
+- `n_step_gd` (`int`): The number of gradient descent steps to take. Default: `10`.
 - `n_step_nm` (`int`): The number of Newton's method steps to take. Default: `10`.
-- `lr_gd` (`float`): The learning rate of gradient descent. Default: `1.0`.
+- `lr_gd` (`float`): The learning rate of gradient descent. Default: `2.0`.
 - `lr_nm` (`float`): The learning rate of Newton's method. Default: `1.0`.
 - `a_init` (`float` or `torch.Tensor`): The starting value for `a`. Default: `1.0`.
 - `b_init` (`float` or `torch.Tensor`): The starting value for `b`. Default: `0.0`.
+
+Note that for arguments that accept type `torch.Tensor`, it does not have to be a one element tensor.
+If that's the case, ensure that broadcasting semantics are followed.
+See the example below in mean and variance matching for broadcasting usage.
 
 ### Calling the `forward` Function of `CAVE`
 
@@ -86,8 +90,9 @@ to get vectors with classification probabilities.
 
 ### Example: Mean and Variance Matching
 
-Suppose we are training a neural network that restores RGB images where the mean and variance of each image are known.
-During training, we would have a batch `ims` of size `N x 3 x H x W`, the corresponding mean values `means` of size `N x 1 x 1 x 1`, and the corresponding variance values `vars` of size `N x 1 x 1 x 1`.
+Suppose we are training a neural network that restores RGB images where the mean and variance of the ground truth image are known.
+During training, we would have an output batch `ims` of size `N x 3 x H x W` and ground truth batch `labels` of the same shape.
+The mean values `means` of `labels` should be of size `N x 1 x 1 x 1`, and the variance values `vars` should also be of the same size.
 We can create a `CAVE` instance by coding the following:
 ```
 cave = CAVE(low = 0.0,
@@ -96,16 +101,11 @@ cave = CAVE(low = 0.0,
 ```
 We can then use the `forward` method by
 ```
-means = ims.mean(dim = [1,2,3], keepdim = True)
-vars = ims.var(dim = [1,2,3], keepdim = True)
+means = labels.mean(dim = [1,2,3], keepdim = True)
+vars = labels.var(dim = [1,2,3], keepdim = True)
 output = cave(ims, mean = means, var = vars, dim = [1,2,3])
 ```
-where the following would evaluate to `True`:
-- `output.amin() >= low`
-- `output.amax() <= high`
-- `((output.mean(dim = [1,2,3], keepdim = True) - means).abs() < eps).all()`
-- `((Y.var(dim = [1,2,3], keepdim = True) - vars).abs() < eps).all()`
-for some small `eps`.
+where each sample in `output` should have the same mean and variance for each corresponding sample in `labels` (as well as in the same range).
 
 ## Custom CAVE Base Functions
 
