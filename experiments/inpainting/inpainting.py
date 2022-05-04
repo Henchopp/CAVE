@@ -7,7 +7,7 @@ import numpy as np
 import torch
 import copy
 import os
-
+torch.autograd.set_detect_anomaly(True)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using {device}")
 
@@ -67,11 +67,11 @@ def train(epochs = 100, cave = False):
         valid_losses = []
 
         with torch.no_grad():
-
+            print(len(valid_loader))
             for feat in valid_loader:
-
+                print("validating", feat)
                 feat = feat.to(device)
-
+                print(model(feat))
                 loss = F.mse_loss(model(feat), feat)
 
                 valid_losses.append(loss.item())
@@ -86,6 +86,7 @@ def train(epochs = 100, cave = False):
             break
 
         print(f"Epoch {e} | Valid Loss {sum(valid_losses) / len(valid_losses)}")
+        print(valid_losses)
 
     # saving
     torch.save(max_state_dict, "/home/prs5019/cave/inpainting")

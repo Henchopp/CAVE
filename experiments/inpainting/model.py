@@ -148,9 +148,9 @@ class AutoEncoder(nn.Module):
                             low = 0.0,
                             high = 1.0,
                             mean = x.mean(dim = [1, 2, 3], keepdim = True),
-                            var = x.var(dim  = [1, 2, 3], keepdim = True, unbiased = False),
+                            var = x.var(dim  = [1, 2, 3], keepdim = True, unbiased = True),
                             dim = [1, 2, 3],
-                            unbiased = False)
+                            unbiased = True)
         else:
             output = self.decoder(self.encoder(x))
 
