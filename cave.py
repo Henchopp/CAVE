@@ -10,69 +10,25 @@ class CAVE(torch.nn.Module):
 	"""docstring for CAVE"""
 
 	def __init__(self, low = None, high = None, mean = None, var = None, func = None, 
-	             dim = None, unbiased = True, n_step_gd = 5, n_step_nm = 10, lr_gd = 1.0, 
+	             dim = None, unbiased = True, n_step_gd = 10, n_step_nm = 10, lr_gd = 2.0, 
 	             lr_nm = 1.0, a_init = 1.0, b_init = 0.0):
 		super(CAVE, self).__init__()
 
-		# Initialize stats
+		# Initializations
 		self.low = low
 		self.high = high
 		self.mean = mean
 		self.var = var
-
+		self.func = func
 		self.dim = dim
 		self.unbiased = unbiased
-
-		# Initialize activation functions
-		self.func = func
-		if self.func is None:
-			if low != None and high != None:
-				self.func = Sigmoid()
-			else:
-				self.func = Softplus()
-
-		# Preprocess mean and var
-		self._mean = mean
-		self._var = var
-		if not (self.func.low == self.low and self.func.high == self.high):
-			if self.func.low != None and self.func.high != None and self.low != None and self.high != None:
-				amp_ratio = (self.func.high - self.func.low) / (self.high - self.low)
-				if mean != None:
-					self._mean = amp_ratio * mean + self.func.low - amp_ratio * self.low
-				if var != None:
-					self._var = var * amp_ratio ** 2
-
-			elif self.func.low != None and (self.low != None or self.high != None):
-				if self.low != None and self.high != None:
-					raise ValueError(f"Cannot specify low and high when "
-					                 f"{type(self.func).__name__}.high == None")
-				elif mean != None and self.low != None:
-					self._mean = mean + self.func.low - self.low
-				elif mean != None and self.high != None:
-					self._mean = -1.0 * (mean - self.high) + self.func.low
-
-			elif self.func.high != None and self.high != None:
-				if self.low != None and self.high != None:
-					raise ValueError(f"Cannot specify low and high when "
-					                 f"{type(self.func).__name__}.low == None")
-				elif mean != None and self.low != None:
-					self._mean = -1.0 * (mean - self.low) + self.func.high
-				elif mean != None and self.high != None:
-					self._mean = mean + self.func.high - self.high
-
-		# Initialize variables to save
 		self.n_step_gd = n_step_gd
 		self.n_step_nm = n_step_nm
 		self.lr_gd = lr_gd
 		self.lr_nm = lr_nm
-		self.a_init = torch.Tensor([a_init]) if not isinstance(a_init, torch.Tensor) else a_init
-		self.b_init = torch.Tensor([b_init]) if not isinstance(b_init, torch.Tensor) else b_init
+		self.a_init = a_init
+		self.b_init = b_init
 
-		# Convert to parameters
-		self.a_init = torch.nn.Parameter(self.a_init, requires_grad = False)
-		self.b_init = torch.nn.Parameter(self.b_init, requires_grad = False)
-
-		# Initialize gradient/newton steps
 		self.gsa = GSA()
 		self.gsb = GSB()
 		self.gsab = GSAB()
@@ -80,44 +36,132 @@ class CAVE(torch.nn.Module):
 		self.nsb = NSB()
 		self.nsab = NSAB()
 
+		self.init_func()
+		self.init_mv()
+		self.init_ab()
+		self.init_opt()
+
+	# Inits
+	def init_func(self):
+		if self.func is None:
+			if self.low != None and self.high != None:
+				self.func = Sigmoid()
+			else:
+				self.func = Softplus()
+
+	def init_mv(self):
+		self._mean = self.mean
+		self._var = self.var
+
+		if all(i != None for i in [self.func.low, self.func.high, self.low, self.high]):
+			amp = (self.func.high - self.func.low) / (self.high - self.low)
+			if self.mean != None:
+				self._mean = amp * (self.mean - self.low) + self.func.low
+			if self.var != None:
+				self._var = self.var * (amp ** 2)
+
+		elif self.mean != None:
+			if self.func.low != None:
+				if self.low != None:
+					self._mean = self.mean + self.func.low - self.low
+				elif self.high != None:
+					self._mean = self.func.low + self.high - self.mean
+			elif self.func.high != None:
+				if self.low != None:
+					self._mean = self.func.high + self.low - self.mean
+				elif self.high != None:
+					self._mean = self.mean + self.func.high - self.high
+
+	def init_ab(self):
+		if not isinstance(self.a_init, torch.Tensor):
+			self.a_init = torch.Tensor([self.a_init])
+		if not isinstance(self.b_init, torch.Tensor):
+			self.b_init = torch.Tensor([self.b_init])
+
+		if not isinstance(self.a_init, torch.nn.Parameter):
+			self.a_init = torch.nn.Parameter(data = self.a_init, requires_grad = False)
+		if not isinstance(self.b_init, torch.nn.Parameter):
+			self.b_init = torch.nn.Parameter(data = self.b_init, requires_grad = False)
+
+	def init_opt(self):
+		if self.mean != None and self.var != None:
+			self.func_gd = self.opt_grad_joint
+			self.func_nm = self.opt_newton_joint
+		elif self.mean != None:
+			self.func_gd = self.opt_grad_mean
+			self.func_nm = self.opt_newton_mean
+		elif self.var != None:
+			self.func_gd = self.opt_grad_var
+			self.func_nm = self.opt_newton_var
+
 
 	# CAVE transforms
-	def opt_grad_mean(self, x, a, b):
-		db = self.gsb(x, a, b, self.func, self._mean, self._dim, self.lr_gd)
+	def opt_grad_mean(self, x):
+		db = self.gsb(x, self.a, self.b, self.func, self._mean, self._dim, self.lr_gd)
 		return None, db
 
-	def opt_grad_var(self, x, a, b):
-		da = self.gsa(x, a, b, self.func, self._var, self._dim, self.unbiased, self.lr_gd)
+	def opt_grad_var(self, x):
+		da = self.gsa(x, self.a, self.b, self.func, self._var, self._dim, self.unbiased,
+		              self.lr_gd)
 		return da, None
 
-	def opt_grad_joint(self, x, a, b):
-		da, db = self.gsab(x, a, b, self.func, self._mean, self._var, self._dim, self.unbiased, self.lr_gd)
+	def opt_grad_joint(self, x):
+		da, db = self.gsab(x, self.a, self.b, self.func, self._mean, self._var, self._dim,
+		                   self.unbiased, self.lr_gd)
 		return da, db
 
-	def opt_newton_mean(self, x, a, b):
-		db = self.nsb(x, a, b, self.func, self._mean, self._dim, self.lr_nm)
+	def opt_newton_mean(self, x):
+		db = self.nsb(x, self.a, self.b, self.func, self._mean, self._dim, self.lr_nm)
 		return None, db
 
-	def opt_newton_var(self, x, a, b):
-		da = self.nsa(x, a, b, self.func, self._var, self._dim, self.unbiased, self.lr_nm)
+	def opt_newton_var(self, x):
+		da = self.nsa(x, self.a, self.b, self.func, self._var, self._dim, self.unbiased,
+		              self.lr_nm)
 		return da, None
 
-	def opt_newton_joint(self, x, a, b):
-		da, db = self.nsab(x, a, b, self.func, self._mean, self._var, self._dim, self.unbiased, self.lr_nm)
+	def opt_newton_joint(self, x):
+		da, db = self.nsab(x, self.a, self.b, self.func, self._mean, self._var, self._dim,
+		                   self.unbiased, self.lr_nm)
 		return da, db
 
-	def forward(self, x):
+	def activation(self, x, a = None, b = None, normalize = True):
+		if a == None:
+			a = self.a.clone()
+		if b == None:
+			b = self.b.clone()
+		if normalize:
+			x = (x - x.mean(**self._dim)) / x.std(**self._dim)
 
-		# Select optimization methods
-		if self.mean != None and self.var != None:
-			func_gd = self.opt_grad_joint
-			func_nm = self.opt_newton_joint
-		elif self.mean != None:
-			func_gd = self.opt_grad_mean
-			func_nm = self.opt_newton_mean
-		elif self.var != None:
-			func_gd = self.opt_grad_var
-			func_nm = self.opt_newton_var
+		if all(i != None for i in [self.func.low, self.func.high, self.low, self.high]):
+			amp = (self.high - self.low) / (self.func.high - self.func.low)
+			return amp * (self.func.fx(a * x + b) - self.func.low) + self.low
+
+		elif self.func.low != None:
+			if self.low != None:
+				return self.func.fx(a * x + b) - self.func.low + self.low
+			elif self.high != None:
+				return self.func.low + self.high - self.func.fx(a * x + b)
+		elif self.func.high != None:
+			if self.low != None:
+				return self.func.high + self.low - self.func.fx(a * x + b)
+			elif self.high != None:
+				return self.func.fx(a * x + b) - self.func.high + self.high
+
+	def forward(self, x, **kwargs):
+
+		# Kwargs handler
+		if len(kwargs) > 0:
+			for key, val in kwargs.items():
+				if hasattr(self, key):
+					setattr(self, key, val)
+
+			if 'func' in kwargs.keys() or 'low' in kwargs.keys() or 'high' in kwargs.keys():
+				self.init_func()
+			if 'mean' in kwargs.keys() or 'var' in kwargs.keys():
+				self.init_mv()
+				self.init_opt()
+			if 'a_init' in kwargs.keys() or 'b_init' in kwargs.keys():
+				self.init_ab()
 
 		# Dimension processing
 		self._dim = {'keepdim': True}
@@ -129,47 +173,29 @@ class CAVE(torch.nn.Module):
 			self._dim['dim'] = self.dim
 
 		# Initialize a and b
-		a = self.a_init
-		b = self.b_init
+		self.a = self.a_init.clone()
+		self.b = self.b_init.clone()
 
 		# Standard normalize input
 		x = (x - x.mean(**self._dim)) / x.std(**self._dim)
 
 		# Gradient descent
 		for _ in range(self.n_step_gd):
-			da, db = func_gd(x, a, b)
+			da, db = self.func_gd(x)
 			if da is not None:
-				a = a - da
+				self.a = self.a - da
 			if db is not None:
-				b = b - db
+				self.b = self.b - db
 
 		# Newton's method
 		for _ in range(self.n_step_nm):
-			da, db = func_nm(x, a, b)
+			da, db = self.func_nm(x)
 			if da is not None:
-				a = a - da
+				self.a = self.a - da
 			if db is not None:
-				b = b - db
+				self.b = self.b - db
 
-		# Postprocess mean and var
-		if not (self.func.low == self.low and self.func.high == self.high):
-			if self.func.low != None and self.func.high != None and self.low != None and self.high != None:
-				amp_ratio = (self.func.high - self.func.low) / (self.high - self.low)
-				return (self.func.fx(a * x + b) - self.func.low + amp_ratio * self.low) / amp_ratio
-
-			elif self.func.low != None and (self.low != None or self.high != None):
-				if self.low != None:
-					return self.func.fx(a * x + b) - self.func.low + self.low
-				elif self.high != None:
-					return -1.0 * (self.func.fx(a * x + b) - self.func.low) + self.high
-
-			elif self.func.high != None and self.high != None:
-				if self.low != None:
-					return -1.0 * (self.func.fx(a * x + b) - self.func.high) + self.low
-				elif self.high != None:
-					return self.func.fx(a * x + b) - self.func.high + self.high
-
-		return self.func.fx(a * x + b)
+		return self.activation(x, a = self.a, b = self.b, normalize = False)
 
 
 ##########################
@@ -232,7 +258,7 @@ class CAVEBaseFunction(ABC):
 		return lr * 2 * (f.var(unbiased = False, **dim) - var) * dEv_da
 
 	def Gb(self, x, a, b, mean, dim, lr):
-		return lr * 2 * (self.fx(a * x + b).mean(**dim) - mean) * self.dfx(a * x + b).mean(**dim)
+		return lr * 2 * (self.fx(a*x + b).mean(**dim) - mean) * self.dfx(a*x + b).mean(**dim)
 
 	def Gab(self, x, a, b, mean, var, dim, lr):
 		f = self.fx(a * x + b)
@@ -500,8 +526,8 @@ class CAVEBaseFunction(ABC):
 		d3Ev_da2x = 2 / N * (2 * df_da * d2f_dax + df_dx * d2f_da2 + f * d3f_da2x - \
 		                     2 * dEm_da * d2f_dax - df_dx * d2Em_da2 - \
 		                     fmean * d3f_da2x)
-		d3Ev_dabx = 2 / N * (d2f_dax * df_db + d2f_dbx * df_da + df_dx * d2f_dab + f * d3f_dabx - \
-		                     d2f_dax * dEm_db - d2f_dbx * dEm_da - \
+		d3Ev_dabx = 2 / N * (d2f_dax * df_db + d2f_dbx * df_da + df_dx * d2f_dab + \
+		                     f * d3f_dabx - d2f_dax * dEm_db - d2f_dbx * dEm_da - \
 		                     df_dx * d2Em_dab - d3f_dabx * fmean)
 		d3Ev_db2x = 2 / N * (2 * df_db * d2f_dbx + df_dx * d2f_db2 + f * d3f_db2x - \
 		                     2 * dEm_db * d2f_dbx - df_dx * d2Em_db2 - \
@@ -516,8 +542,9 @@ class CAVEBaseFunction(ABC):
 		d2L_dbx = 2 * (dEm_db * dEm_dx + Em * d2Em_dbx + dEv_db * dEv_dx + Ev * d2Ev_dbx)
 		d3L_da2x = 2 * (2 * dEm_da * d2Em_dax + dEm_dx * d2Em_da2 + Em * d3Em_da2x + \
 		                2 * dEv_da * d2Ev_dax + dEv_dx * d2Ev_da2 + Ev * d3Ev_da2x)
-		d3L_dabx = 2 * (dEm_da * d2Em_dbx + dEm_db * d2Em_dax + dEm_dx * d2Em_dab + Em * d3Em_dabx + \
-		                dEv_da * d2Ev_dbx + dEv_db * d2Ev_dax + dEv_dx * d2Ev_dab + Ev * d3Ev_dabx)
+		d3L_dabx = 2 * (dEm_da * d2Em_dbx + dEm_db * d2Em_dax + dEm_dx * d2Em_dab + \
+		                Em * d3Em_dabx + dEv_da * d2Ev_dbx + dEv_db * d2Ev_dax + \
+		                dEv_dx * d2Ev_dab + Ev * d3Ev_dabx)
 		d3L_db2x = 2 * (2 * dEm_db * d2Em_dbx + dEm_dx * d2Em_db2 + Em * d3Em_db2x + \
 		                2 * dEv_db * d2Ev_dbx + dEv_dx * d2Ev_db2 + Ev * d3Ev_db2x)
 
