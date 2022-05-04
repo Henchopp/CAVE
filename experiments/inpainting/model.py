@@ -2,7 +2,6 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 from CAVE.cave import CAVE
-from CAVE.utils.cave_base_functions import Sigmoid
 
 
 class BatchConvReLU(nn.Module):
@@ -136,7 +135,7 @@ class AutoEncoder(nn.Module):
         if(use_cave == True):
             encoding_space = encoding_space - 2
 
-        self.cave = CAVE(func = Sigmoid()) if use_cave == True else None
+        self.cave = CAVE() if use_cave == True else None
 
         self.encoder = Encoder(encoding_space = encoding_space)
         self.decoder = Decoder(encoding_space = encoding_space)
@@ -149,7 +148,7 @@ class AutoEncoder(nn.Module):
                             low = 0.0,
                             high = 1.0,
                             mean = x.mean(dim = [1, 2, 3], keepdim = True),
-                            var = x.var(dim  = [1, 2, 3], keepdim = True, unbiased = False), 
+                            var = x.var(dim  = [1, 2, 3], keepdim = True, unbiased = False),
                             dim = [1, 2, 3],
                             unbiased = False)
         else:
