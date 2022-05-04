@@ -130,15 +130,26 @@ class Decoder(nn.Module):
 
 class AutoEncoder(nn.Module):
 
-    def __init__(self, encoding_space = 100):
+    def __init__(self, encoding_space = 100, use_cave = False):
         super(AutoEncoder, self).__init__()
+
+        if(use_cave == True):
+            encoding_space = encoding_space - 2
+
+        self.cave = CAVE(func = Sigmoid()) if use_cave == True else None
 
         self.encoder = Encoder(encoding_space = encoding_space)
         self.decoder = Decoder(encoding_space = encoding_space)
 
     def forward(self, x):
 
-        return self.decoder(self.encoder(x))
+        if(self.cave is not None):
+            output = self.decoder(self.encoder(x))
+            output = self.cave(output, low = 0.0, high = 1.0, mean = x.mean(), var = x.var(), sparse = False, dim = 1, unbiased = False)
+        else:
+            output = self.decoder(self.encoder(x))
+
+        return output
 
     def encode(self, x):
 
