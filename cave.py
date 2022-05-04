@@ -562,7 +562,9 @@ class CAVEBaseFunction(ABC):
 		for i in dir():
 			if(isinstance(eval(i), torch.Tensor)):
 				if(eval(i).isnan().any()):
-					print((D ** 2 + 1e-20).abs().min(), D.abs().min(), (D**2).abs().min())
+					print(i, "nan")
+				elif(eval(i).isinf().any()):
+					print(i, "inf")
 
 		return lr * dNa_dx, lr * dNb_dx
 
