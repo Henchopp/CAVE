@@ -67,11 +67,10 @@ def train(epochs = 100, cave = False):
         valid_losses = []
 
         with torch.no_grad():
-            print(len(valid_loader))
+
             for feat in valid_loader:
-                print("validating", feat)
                 feat = feat.to(device)
-                print(model(feat))
+
                 loss = F.mse_loss(model(feat), feat)
 
                 valid_losses.append(loss.item())
