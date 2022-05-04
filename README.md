@@ -96,7 +96,9 @@ cave = CAVE(low = 0.0,
 ```
 We can then use the `forward` method by
 ```
-output = cave(ims, mean = means, var = vars)
+means = ims.mean(dim = [1,2,3], keepdim = True)
+vars = ims.var(dim = [1,2,3], keepdim = True)
+output = cave(ims, mean = means, var = vars, dim = [1,2,3])
 ```
 where the following would evaluate to `True`:
 - `output.amin() >= low`
