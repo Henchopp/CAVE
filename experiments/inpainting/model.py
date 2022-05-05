@@ -135,7 +135,7 @@ class AutoEncoder(nn.Module):
         if(use_cave == True):
             encoding_space = encoding_space - 2
 
-        self.cave = CAVE() if use_cave == True else None
+        self.cave = CAVE(n_step_nm = 7) if use_cave == True else None
 
         self.encoder = Encoder(encoding_space = encoding_space)
         self.decoder = Decoder(encoding_space = encoding_space)
