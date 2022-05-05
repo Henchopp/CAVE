@@ -148,8 +148,7 @@ class AutoEncoder(nn.Module):
                             mean = x.mean(dim = [1, 2, 3], keepdim = True),
                             var = x.var(dim  = [1, 2, 3], keepdim = True, unbiased = True))
         else:
-            output = self.decoder(self.encoder(x)).sigmoid()
-
+            output = self.decoder(self.encoder(x))
         return output
 
     def encode(self, x):

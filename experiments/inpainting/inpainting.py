@@ -7,6 +7,9 @@ import numpy as np
 import torch
 import copy
 import os
+
+from CAVE.cave import CAVE
+
 torch.autograd.set_detect_anomaly(True)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using {device}")
@@ -50,6 +53,8 @@ def train(epochs = 100, cave = False):
     min_loss = np.inf
     n_no_decrease = 0
 
+    cave = CAVE(n_step_nm = 7, low = 0, high = 1, dim = [1, 2, 3], unbiased = True)
+
     for e in range(epochs):
 
         for feat in train_loader:
@@ -58,7 +63,10 @@ def train(epochs = 100, cave = False):
 
             optimizer.zero_grad()
 
-            loss = F.mse_loss(model(feat), feat) # getting mean squared error loss
+            loss = F.mse_loss(
+            cave(model(feat),
+                mean = x.mean(dim = [1, 2, 3], keepdim = True), 
+                var = x.var(dim  = [1, 2, 3], keepdim = True, unbiased = True)), feat) # getting mean squared error loss
 
             loss.backward() # backwards sweep
 
