@@ -14,6 +14,10 @@ class CAVE(torch.nn.Module):
 				 lr_nm = 1.0, a_init = 1.0, b_init = 0.0):
 		super(CAVE, self).__init__()
 
+		# Initialize buffers
+		self.register_buffer('a_init', torch.Tensor())
+		self.register_buffer('b_init', torch.Tensor())
+
 		# Initializations
 		self.low = low
 		self.high = high
@@ -26,8 +30,8 @@ class CAVE(torch.nn.Module):
 		self.n_step_nm = n_step_nm
 		self.lr_gd = lr_gd
 		self.lr_nm = lr_nm
-		self.a_init = a_init
-		self.b_init = b_init
+		self.a_init = a_init if isinstance(a_init, torch.Tensor) else torch.Tensor([a_init])
+		self.b_init = b_init if isinstance(b_init, torch.Tensor) else torch.Tensor([b_init])
 
 		self.gsa = GSA()
 		self.gsb = GSB()
@@ -38,7 +42,6 @@ class CAVE(torch.nn.Module):
 
 		self.init_func()
 		self.init_mv()
-		self.init_ab()
 		self.init_opt()
 
 	# Inits
@@ -71,17 +74,6 @@ class CAVE(torch.nn.Module):
 					self._mean = self.func.high + self.low - self.mean
 				elif self.high != None:
 					self._mean = self.mean + self.func.high - self.high
-
-	def init_ab(self):
-		if not isinstance(self.a_init, torch.Tensor):
-			self.a_init = torch.Tensor([self.a_init])
-		if not isinstance(self.b_init, torch.Tensor):
-			self.b_init = torch.Tensor([self.b_init])
-
-		if not isinstance(self.a_init, torch.nn.Parameter):
-			self.a_init = torch.nn.Parameter(data = self.a_init, requires_grad = False)
-		if not isinstance(self.b_init, torch.nn.Parameter):
-			self.b_init = torch.nn.Parameter(data = self.b_init, requires_grad = False)
 
 	def init_opt(self):
 		if self.mean != None and self.var != None:
@@ -153,15 +145,16 @@ class CAVE(torch.nn.Module):
 		if len(kwargs) > 0:
 			for key, val in kwargs.items():
 				if hasattr(self, key):
-					setattr(self, key, val)
+					if key in ['a_init', 'b_init'] and not isinstance(val, torch.Tensor):
+						setattr(self, key, torch.Tensor([val]))
+					else:
+						setattr(self, key, val)
 
 			if 'func' in kwargs.keys() or 'low' in kwargs.keys() or 'high' in kwargs.keys():
 				self.init_func()
 			if 'mean' in kwargs.keys() or 'var' in kwargs.keys():
 				self.init_mv()
 				self.init_opt()
-			if 'a_init' in kwargs.keys() or 'b_init' in kwargs.keys():
-				self.init_ab()
 
 		# Dimension processing
 		self._dim = {'keepdim': True}
