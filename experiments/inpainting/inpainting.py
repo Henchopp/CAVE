@@ -57,17 +57,16 @@ def train(epochs = 100, cave = False):
 
     for e in range(epochs):
 
+        train_losses = []
+
         for feat in train_loader:
-            # print(feat.float().detach().cpu().numpy().tolist())
+
             feat = feat.float().to(device)
 
             optimizer.zero_grad()
 
-            loss = F.mse_loss(
-            cave(model(feat).detach().cpu(),
-                mean = feat.mean(dim = [1, 2, 3], keepdim = True).detach().cpu(),
-                var = feat.var(dim  = [1, 2, 3], keepdim = True, unbiased = True)).detach().cpu(), feat.detach().cpu()) # getting mean squared error loss
-
+            loss = F.mse_loss(model(feat), feat) # getting mean squared error loss
+            train_losses.apppend(loss.item())
             loss.backward() # backwards sweep
 
             optimizer.step() # adjusting model parameters
@@ -92,7 +91,7 @@ def train(epochs = 100, cave = False):
         if(n_no_decrease > 9):
             break
 
-        print(f"Epoch {e} | Valid Loss {sum(valid_losses) / len(valid_losses)}")
+        print(f"Epoch {e} | Valid Loss {sum(valid_losses) / len(valid_losses)} | Train Loss {sum(train_losses) / len(train_losses)}")
 
 
     # saving
