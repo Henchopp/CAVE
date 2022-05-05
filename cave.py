@@ -564,12 +564,12 @@ class CAVEBaseFunction(ABC):
 		dNa_dx = (D * dNa_dx - Na * dD_dx) / (D ** 2 + 1e-20)
 		dNb_dx = (D * dNb_dx - Nb * dD_dx) / (D ** 2 + 1e-20)
 
-		# for i in dir():
-		# 	if(isinstance(eval(i), torch.Tensor)):
-		# 		if(eval(i).isnan().any()):
-		# 			print(i, "nan")
-		# 		elif(eval(i).isinf().any()):
-		# 			print(i, "inf")
+		for i in dir():
+			if(isinstance(eval(i), torch.Tensor)):
+				if(eval(i).isnan().any()):
+					print(i, "nan")
+				elif(eval(i).isinf().any()):
+					print(i, "inf")
 
 		return lr * dNa_dx, lr * dNb_dx
 
