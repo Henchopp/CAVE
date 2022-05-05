@@ -10,8 +10,8 @@ class CAVE(torch.nn.Module):
 	"""docstring for CAVE"""
 
 	def __init__(self, low = None, high = None, mean = None, var = None, func = None,
-	             dim = None, unbiased = True, n_step_gd = 10, n_step_nm = 10, lr_gd = 2.0,
-	             lr_nm = 1.0, a_init = 1.0, b_init = 0.0):
+				 dim = None, unbiased = True, n_step_gd = 10, n_step_nm = 10, lr_gd = 2.0,
+				 lr_nm = 1.0, a_init = 1.0, b_init = 0.0):
 		super(CAVE, self).__init__()
 
 		# Initializations
@@ -102,12 +102,12 @@ class CAVE(torch.nn.Module):
 
 	def opt_grad_var(self, x):
 		da = self.gsa(x, self.a, self.b, self.func, self._var, self._dim, self.unbiased,
-		              self.lr_gd)
+					  self.lr_gd)
 		return da, None
 
 	def opt_grad_joint(self, x):
 		da, db = self.gsab(x, self.a, self.b, self.func, self._mean, self._var, self._dim,
-		                   self.unbiased, self.lr_gd)
+						   self.unbiased, self.lr_gd)
 		return da, db
 
 	def opt_newton_mean(self, x):
@@ -116,12 +116,12 @@ class CAVE(torch.nn.Module):
 
 	def opt_newton_var(self, x):
 		da = self.nsa(x, self.a, self.b, self.func, self._var, self._dim, self.unbiased,
-		              self.lr_nm)
+					  self.lr_nm)
 		return da, None
 
 	def opt_newton_joint(self, x):
 		da, db = self.nsab(x, self.a, self.b, self.func, self._mean, self._var, self._dim,
-		                   self.unbiased, self.lr_nm)
+						   self.unbiased, self.lr_nm)
 		return da, db
 
 	def activation(self, x, a = None, b = None, normalize = True):
@@ -226,22 +226,22 @@ class CAVEBaseFunction(ABC):
 	@abstractmethod
 	def fx(self, x):
 		raise NotImplementedError("You must implement the function for your custom "
-		                          "CAVEBaseFunction.")
+								  "CAVEBaseFunction.")
 
 	@abstractmethod
 	def dfx(self, x):
 		raise NotImplementedError("You must implement the first derivative for your custom "
-		                          "CAVEBaseFunction.")
+								  "CAVEBaseFunction.")
 
 	@abstractmethod
 	def d2fx(self, x):
 		raise NotImplementedError("You must implement the second derivative for your custom "
-		                          "CAVEBaseFunction.")
+								  "CAVEBaseFunction.")
 
 	@abstractmethod
 	def d3fx(self, x):
 		raise NotImplementedError("You must implement the third derivative for your custom "
-		                          "CAVEBaseFunction.")
+								  "CAVEBaseFunction.")
 
 
 	##################################################
@@ -295,7 +295,7 @@ class CAVEBaseFunction(ABC):
 		dEv_da = 2 * ((f * df_da).mean(**dim) - fmean * dEm_da)
 		dEv_dx = 2 * df_dx / N * (f - fmean)
 		d2Ev_dax = 2 / N * ((df_da * df_dx + f * d2f_dax) - \
-		                    df_dx * dEm_da - fmean * d2f_dax)
+							df_dx * dEm_da - fmean * d2f_dax)
 
 		d2Lv_dax = 2 * (dEv_da * dEv_dx + Ev * d2Ev_dax)
 
@@ -335,14 +335,14 @@ class CAVEBaseFunction(ABC):
 		Ev = f.var(unbiased = False, **dim) - var
 		dEv_dx = 2 * df_dx / N * (f - fmean)
 		d2Ev_dax = 2 / N * ((df_da * df_dx + f * d2f_dax) - \
-		                    df_dx * dEm_da - fmean * d2f_dax)
+							df_dx * dEm_da - fmean * d2f_dax)
 		d2Ev_dbx = 2 / N * ((df_db * df_dx + f * d2f_dbx) - \
-		                    df_dx * dEm_db - fmean * d2f_dbx)
+							df_dx * dEm_db - fmean * d2f_dbx)
 
 		dGa_dx = 2 * (dEm_da * dEm_dx + Em * d2f_dax / N + \
-		              2 * ((f * df_da).mean(**dim) - fmean * dEm_da) * dEv_dx + Ev * d2Ev_dax)
+					  2 * ((f * df_da).mean(**dim) - fmean * dEm_da) * dEv_dx + Ev * d2Ev_dax)
 		dGb_dx = 2 * (dEm_db * dEm_dx + Em * d2f_dbx / N + \
-		              2 * ((f * df_db).mean(**dim) - fmean * dEm_db) * dEv_dx + Ev * d2Ev_dbx)
+					  2 * ((f * df_db).mean(**dim) - fmean * dEm_db) * dEv_dx + Ev * d2Ev_dbx)
 
 		return lr * dGa_dx, lr * dGb_dx
 
@@ -363,7 +363,7 @@ class CAVEBaseFunction(ABC):
 		Ev = f.var(unbiased = False, **dim) - var
 		dEv_da = 2 * ((f * df_da).mean(**dim) - fmean * dEm_da)
 		d2Ev_da2 = 2 * ((df_da ** 2 + f * d2f_da2).mean(**dim) - \
-		                dEm_da ** 2 - fmean * d2f_da2.mean(**dim))
+						dEm_da ** 2 - fmean * d2f_da2.mean(**dim))
 
 		dLv_da = 2 * Ev * dEv_da
 		d2Lv_da2 = 2 * (dEv_da ** 2 + Ev * d2Ev_da2) + 1e-30
@@ -401,11 +401,11 @@ class CAVEBaseFunction(ABC):
 		dEv_da = 2 * ((f * df_da).mean(**dim) - fmean * dEm_da)
 		dEv_db = 2 * ((f * df_db).mean(**dim) - fmean * dEm_db)
 		d2Ev_da2 = 2 * ((df_da ** 2 + f * d2f_da2).mean(**dim) - \
-		                dEm_da ** 2 - fmean * d2Em_da2)
+						dEm_da ** 2 - fmean * d2Em_da2)
 		d2Ev_dab = 2 * ((df_da * df_db + f * d2f_dab).mean(**dim) - \
-		                dEm_da * dEm_db - fmean * d2Em_dab)
+						dEm_da * dEm_db - fmean * d2Em_dab)
 		d2Ev_db2 = 2 * ((df_db ** 2 + f * d2f_db2).mean(**dim) - \
-		                dEm_db ** 2 - fmean * d2Em_db2)
+						dEm_db ** 2 - fmean * d2Em_db2)
 
 		dL_da = 2 * (Em * dEm_da + Ev * dEv_da)
 		dL_db = 2 * (Em * dEm_db + Ev * dEv_db)
@@ -413,8 +413,8 @@ class CAVEBaseFunction(ABC):
 		d2L_dab = 2 * (dEm_da * dEm_db + Em * d2Em_dab + dEv_da * dEv_db + Ev * d2Ev_dab)
 		d2L_db2 = 2 * (dEm_db ** 2 + Em * d2Em_db2 + dEv_db ** 2 + Ev * d2Ev_db2)
 
-		Na = dL_da * d2L_db2 - dL_db * d2L_dab
-		Nb = dL_db * d2L_da2 - dL_da * d2L_dab
+		Na = (dL_da * d2L_db2).clip(-1e38, 1e38) - (dL_db * d2L_dab).clip(-1e38, 1e38)
+		Nb = (dL_db * d2L_da2).clip(-1e38, 1e38) - (dL_da * d2L_dab).clip(-1e38, 1e38)
 		D = d2L_da2 * d2L_db2 - d2L_dab ** 2 + 1e-30
 
 		return lr * Na / D, lr * Nb / D
@@ -442,19 +442,22 @@ class CAVEBaseFunction(ABC):
 		dEv_da = 2 * ((f * df_da).mean(**dim) - fmean * dEm_da)
 		dEv_dx = 2 * df_dx / N * (f - fmean)
 		d2Ev_da2 = 2 * ((df_da ** 2 + f * d2f_da2).mean(**dim) - \
-		                dEm_da ** 2 - fmean * d2Em_da2)
+						dEm_da ** 2 - fmean * d2Em_da2)
 		d2Ev_dax = 2 / N * ((df_da * df_dx + f * d2f_dax) - \
-		                    df_dx * dEm_da - fmean * d2f_dax)
+							df_dx * dEm_da - fmean * d2f_dax)
 		d3Ev_da2x = 2 / N * (2 * df_da * d2f_dax + df_dx * d2f_da2 + f * d3f_da2x - \
-		                     2 * dEm_da * d2f_dax - df_dx * d2Em_da2 - \
-		                     fmean * d3f_da2x)
+							 2 * dEm_da * d2f_dax - df_dx * d2Em_da2 - \
+							 fmean * d3f_da2x)
 
 		dLv_da = 2 * Ev * dEv_da
 		d2Lv_da2 = 2 * (dEv_da ** 2 + Ev * d2Ev_da2)
 		d2Lv_dax = 2 * (dEv_da * dEv_dx + Ev * d2Ev_dax)
 		d3Lv_da2x = 2 * (2 * dEv_da * d2Ev_dax + dEv_dx * d2Ev_da2 + Ev * d3Ev_da2x)
 
-		return lr * (d2Lv_da2 * d2Lv_dax - dLv_da * d3Lv_da2x) / (d2Lv_da2 ** 2 + 1e-30)
+		Na = (d2Lv_da2 * d2Lv_dax).clip(-1e38, 1e38) - (dLv_da * d3Lv_da2x).clip(-1e38, 1e38)
+		D = (d2Lv_da2 ** 2).clip(-1e38, 1e38) + 1e-30
+
+		return lr * Na / D
 
 	def dNb_dx(self, x, a, b, mean, dim, lr):
 		N = self.numel(x.shape, dim)
@@ -474,7 +477,10 @@ class CAVEBaseFunction(ABC):
 		d2Lm_dbx = 2 * (dEm_db * dEm_dx + Em * d2Em_dbx)
 		d3Lm_db2x = 2 * (2 * dEm_db * d2Em_dbx + dEm_dx * d2Em_db2 + Em * d3Em_db2x)
 
-		return lr * (d2Lm_db2 * d2Lm_dbx - dLm_db * d3Lm_db2x) / (d2Lm_db2 ** 2 + 1e-30)
+		Nb = (d2Lm_db2 * d2Lm_dbx).clip(-1e38, 1e38) - (dLm_db * d3Lm_db2x).clip(-1e38, 1e38)
+		D = (d2Lm_db2 ** 2).clip(-1e38, 1e38) + 1e-30
+
+		return lr * Nb / D
 
 	def dNab_dx(self, x, a, b, mean, var, dim, lr):
 		N = self.numel(x.shape, dim)
@@ -513,25 +519,25 @@ class CAVEBaseFunction(ABC):
 		dEv_db = 2 * ((f * df_db).mean(**dim) - fmean * dEm_db)
 		dEv_dx = 2 * df_dx / N * (f - fmean)
 		d2Ev_da2 = 2 * ((df_da ** 2 + f * d2f_da2).mean(**dim) - \
-		                dEm_da ** 2 - fmean * d2Em_da2)
+						dEm_da ** 2 - fmean * d2Em_da2)
 		d2Ev_dab = 2 * ((df_da * df_db + f * d2f_dab).mean(**dim) - \
-		                dEm_da * dEm_db - \
-		                fmean * d2Em_dab)
+						dEm_da * dEm_db - \
+						fmean * d2Em_dab)
 		d2Ev_db2 = 2 * ((df_db ** 2 + f * d2f_db2).mean(**dim) - \
-		                dEm_db ** 2 - fmean * d2Em_db2)
+						dEm_db ** 2 - fmean * d2Em_db2)
 		d2Ev_dax = 2 / N * ((df_da * df_dx + f * d2f_dax) - \
-		                    df_dx * dEm_da - fmean * d2f_dax)
+							df_dx * dEm_da - fmean * d2f_dax)
 		d2Ev_dbx = 2 / N * ((df_db * df_dx + f * d2f_dbx) - \
-		                    df_dx * dEm_db - fmean * d2f_dbx)
+							df_dx * dEm_db - fmean * d2f_dbx)
 		d3Ev_da2x = 2 / N * (2 * df_da * d2f_dax + df_dx * d2f_da2 + f * d3f_da2x - \
-		                     2 * dEm_da * d2f_dax - df_dx * d2Em_da2 - \
-		                     fmean * d3f_da2x)
+							 2 * dEm_da * d2f_dax - df_dx * d2Em_da2 - \
+							 fmean * d3f_da2x)
 		d3Ev_dabx = 2 / N * (d2f_dax * df_db + d2f_dbx * df_da + df_dx * d2f_dab + \
-		                     f * d3f_dabx - d2f_dax * dEm_db - d2f_dbx * dEm_da - \
-		                     df_dx * d2Em_dab - d3f_dabx * fmean)
+							 f * d3f_dabx - d2f_dax * dEm_db - d2f_dbx * dEm_da - \
+							 df_dx * d2Em_dab - d3f_dabx * fmean)
 		d3Ev_db2x = 2 / N * (2 * df_db * d2f_dbx + df_dx * d2f_db2 + f * d3f_db2x - \
-		                     2 * dEm_db * d2f_dbx - df_dx * d2Em_db2 - \
-		                     fmean * d3f_db2x)
+							 2 * dEm_db * d2f_dbx - df_dx * d2Em_db2 - \
+							 fmean * d3f_db2x)
 
 		dL_da = 2 * (Em * dEm_da + Ev * dEv_da)
 		dL_db = 2 * (Em * dEm_db + Ev * dEv_db)
@@ -541,12 +547,12 @@ class CAVEBaseFunction(ABC):
 		d2L_dax = 2 * (dEm_da * dEm_dx + Em * d2Em_dax + dEv_da * dEv_dx + Ev * d2Ev_dax)
 		d2L_dbx = 2 * (dEm_db * dEm_dx + Em * d2Em_dbx + dEv_db * dEv_dx + Ev * d2Ev_dbx)
 		d3L_da2x = 2 * (2 * dEm_da * d2Em_dax + dEm_dx * d2Em_da2 + Em * d3Em_da2x + \
-		                2 * dEv_da * d2Ev_dax + dEv_dx * d2Ev_da2 + Ev * d3Ev_da2x)
+						2 * dEv_da * d2Ev_dax + dEv_dx * d2Ev_da2 + Ev * d3Ev_da2x)
 		d3L_dabx = 2 * (dEm_da * d2Em_dbx + dEm_db * d2Em_dax + dEm_dx * d2Em_dab + \
-		                Em * d3Em_dabx + dEv_da * d2Ev_dbx + dEv_db * d2Ev_dax + \
-		                dEv_dx * d2Ev_dab + Ev * d3Ev_dabx)
+						Em * d3Em_dabx + dEv_da * d2Ev_dbx + dEv_db * d2Ev_dax + \
+						dEv_dx * d2Ev_dab + Ev * d3Ev_dabx)
 		d3L_db2x = 2 * (2 * dEm_db * d2Em_dbx + dEm_dx * d2Em_db2 + Em * d3Em_db2x + \
-		                2 * dEv_db * d2Ev_dbx + dEv_dx * d2Ev_db2 + Ev * d3Ev_db2x)
+						2 * dEv_db * d2Ev_dbx + dEv_dx * d2Ev_db2 + Ev * d3Ev_db2x)
 
 		Na = dL_da * d2L_db2 - dL_db * d2L_dab
 		Nb = dL_db * d2L_da2 - dL_da * d2L_dab
@@ -555,22 +561,11 @@ class CAVEBaseFunction(ABC):
 		dNa_dx = d2L_dax * d2L_db2 + dL_da * d3L_db2x - d2L_dbx * d2L_dab - dL_db * d3L_dabx
 		dNb_dx = d2L_dbx * d2L_da2 + dL_db * d3L_da2x - d2L_dax * d2L_dab - dL_da * d3L_dabx
 		dD_dx = d3L_da2x * d2L_db2 + d3L_db2x * d2L_da2 - 2 * d2L_dab * d3L_dabx
-		# if((D * dNa_dx - Na * dD_dx).isnan().any()):
-		# 	print(((D * dNa_dx) == torch.nan).nonzero(),
-		# 		((Na * dD_dx) == torch.nan).nonzero(),
-		# 		((D * dNa_dx - Na * dD_dx) == torch.nan).nonzero(),
-		# 		((D * dNa_dx - Na * dD_dx) / (D ** 2 + 1e-20) == torch.nan).nonzero()
-		# 	)
 
-		dNa_dx = ((D * dNa_dx).clip(-1e30, 1e30) - (Na * dD_dx).clip(-1e30, 1e30)) / (D ** 2 + 1e-20)
-		dNb_dx = ((D * dNb_dx).clip(-1e30, 1e30) - (Nb * dD_dx).clip(-1e30, 1e30)) / (D ** 2 + 1e-20)
-
-		for i in dir():
-			if(isinstance(eval(i), torch.Tensor)):
-				if(eval(i).isnan().any()):
-					print(i, "nan")
-				elif(eval(i).isinf().any()):
-					print(i, "inf")
+		dNa_dx = ((D * dNa_dx).clip(-1e38, 1e38) - (Na * dD_dx).clip(-1e38, 1e38)) / \
+				 ((D ** 2).clip(-1e38, 1e38) + 1e-30)
+		dNb_dx = ((D * dNb_dx).clip(-1e38, 1e38) - (Nb * dD_dx).clip(-1e38, 1e38)) / \
+				 ((D ** 2).clip(-1e38, 1e38) + 1e-30)
 
 		return lr * dNa_dx, lr * dNb_dx
 
