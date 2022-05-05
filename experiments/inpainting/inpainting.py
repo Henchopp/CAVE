@@ -64,9 +64,9 @@ def train(epochs = 100, cave = False):
             optimizer.zero_grad()
 
             loss = F.mse_loss(
-            cave(model(feat),
-                mean = feat.mean(dim = [1, 2, 3], keepdim = True),
-                var = feat.var(dim  = [1, 2, 3], keepdim = True, unbiased = True)), feat) # getting mean squared error loss
+            cave(model(feat).detach().cpu(),
+                mean = feat.mean(dim = [1, 2, 3], keepdim = True).detach().cpu(),
+                var = feat.var(dim  = [1, 2, 3], keepdim = True, unbiased = True)).detach().cpu(), feat.detach().cpu()) # getting mean squared error loss
 
             loss.backward() # backwards sweep
 
