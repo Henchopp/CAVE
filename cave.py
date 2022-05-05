@@ -556,7 +556,7 @@ class CAVEBaseFunction(ABC):
 		dNb_dx = d2L_dbx * d2L_da2 + dL_db * d3L_da2x - d2L_dax * d2L_dab - dL_da * d3L_dabx
 		dD_dx = d3L_da2x * d2L_db2 + d3L_db2x * d2L_da2 - 2 * d2L_dab * d3L_dabx
 		if((D * dNa_dx - Na * dD_dx).isnan().any()):
-			print(D * dNa_dx, Na * dD_dx)
+			print(D * dNa_dx, Na * dD_dx, D * dNa_dx - Na * dD_dx)
 		dNa_dx = (D * dNa_dx - Na * dD_dx) / (D ** 2 + 1e-20)
 		dNb_dx = (D * dNb_dx - Nb * dD_dx) / (D ** 2 + 1e-20)
 
