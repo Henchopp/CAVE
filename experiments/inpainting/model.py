@@ -116,8 +116,8 @@ class Decoder(nn.Module):
     def forward(self, x):
 
         # === mlp ===
-        x = self.bn1(self.fc1(x))
-        x = self.bn2(self.fc2(x))
+        x = F.relu(self.bn1(self.fc1(x)))
+        x = F.relu(self.bn2(self.fc2(x)))
         # === reshape ===
         x = x.reshape(x.shape[0], 64, 8, 8)
 
@@ -135,7 +135,7 @@ class AutoEncoder(nn.Module):
         if(use_cave == True):
             encoding_space = encoding_space - 2
 
-        self.cave = CAVE(n_step_nm = 7) if use_cave == True else None
+        self.cave = CAVE(n_step_nm = 7, low = 0, high = 1, dim = [1, 2, 3], unbiased = True) if use_cave == True else None
 
         self.encoder = Encoder(encoding_space = encoding_space)
         self.decoder = Decoder(encoding_space = encoding_space)
@@ -145,14 +145,10 @@ class AutoEncoder(nn.Module):
         if(self.cave is not None):
             output = self.decoder(self.encoder(x))
             output = self.cave(output,
-                            low = 0.0,
-                            high = 1.0,
                             mean = x.mean(dim = [1, 2, 3], keepdim = True),
-                            var = x.var(dim  = [1, 2, 3], keepdim = True, unbiased = True),
-                            dim = [1, 2, 3],
-                            unbiased = True)
+                            var = x.var(dim  = [1, 2, 3], keepdim = True, unbiased = True))
         else:
-            output = self.decoder(self.encoder(x))
+            output = self.decoder(self.encoder(x)).sigmoid()
 
         return output
 
