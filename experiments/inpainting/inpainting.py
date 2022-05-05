@@ -65,8 +65,8 @@ def train(epochs = 100, cave = False):
 
             loss = F.mse_loss(
             cave(model(feat),
-                mean = x.mean(dim = [1, 2, 3], keepdim = True), 
-                var = x.var(dim  = [1, 2, 3], keepdim = True, unbiased = True)), feat) # getting mean squared error loss
+                mean = feat.mean(dim = [1, 2, 3], keepdim = True),
+                var = feat.var(dim  = [1, 2, 3], keepdim = True, unbiased = True)), feat) # getting mean squared error loss
 
             loss.backward() # backwards sweep
 
