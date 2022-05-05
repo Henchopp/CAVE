@@ -146,7 +146,7 @@ class AutoEncoder(nn.Module):
             output = self.decoder(self.encoder(x))
             output = self.cave(output,
                             mean = x.mean(dim = [1, 2, 3], keepdim = True),
-                            var = x.var(dim  = [1, 2, 3], keepdim = True, unbiased = True))
+                            var = None)#x.var(dim  = [1, 2, 3], keepdim = True, unbiased = True))
         else:
             output = self.decoder(self.encoder(x))
         return output
