@@ -58,7 +58,7 @@ def train(epochs = 100, cave = False):
 
             optimizer.zero_grad()
 
-            loss = F.mse_loss(model(feat) - feat) # getting mean squared error loss
+            loss = F.mse_loss(model(feat), feat) # getting mean squared error loss
 
             loss.backward() # backwards sweep
 
