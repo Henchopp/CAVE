@@ -45,7 +45,7 @@ def train(epochs = 100, cave = False):
 
     model.train()
 
-    optimizer = torch.optim.Adam(model.parameters(), lr = 1.0e-5, betas = (0.9, 0.999))
+    optimizer = torch.optim.Adam(model.parameters(), lr = 1.0e-6, betas = (0.9, 0.999))
 
     min_loss = np.inf
     n_no_decrease = 0
@@ -85,7 +85,7 @@ def train(epochs = 100, cave = False):
             break
 
         print(f"Epoch {e} | Valid Loss {sum(valid_losses) / len(valid_losses)}")
-        print(valid_losses)
+
 
     # saving
     torch.save(max_state_dict, "/home/prs5019/cave/inpainting")
