@@ -48,8 +48,8 @@ class SimpleCNN(nn.Module):
         output = (x * x.mean(dim = 1, keepdim = True)).sigmoid()
         # output = x.sigmoid()
         # output = F.log_softmax(x, dim = 1)
-	
-        
+
+
         output = self.cave(x, low = 0.0, high = 1.0, mean = 1e-2, var = None , sparse = False, dim = 1, unbiased = False)
         # if(batch_n == 0):
         #     f.write(np.array2string(output.cpu().detach().numpy()[0]) + "\n\n")
@@ -103,6 +103,8 @@ def train(epochs = 100):
     last_max = 0
     max_state_dict = model.state_dict()
     times = []
+    total_loss_hist = []
+    val_loss = []
 
     for e in range(epochs):
         start = time.time()
@@ -154,26 +156,14 @@ def train(epochs = 100):
         if(last_max > 9):
             break
 
+        val_loss.append(val_loss / len(val))
+        total_loss_hist.append(sum(loss_hist) / len(loss_hist))
+
         print(f"Epoch: {e} | Train Loss: {sum(loss_hist) / len(loss_hist)} | Val Loss: {val_loss / len(val)} | Val Acc: {correct / (correct + wrong)} | Time: {sum(times) / len(times)}")
 
 
     # reloading best model
     model.load_state_dict(max_state_dict)
-
-    val_loss = 0
-    correct = 0
-    wrong = 0
-    with torch.no_grad():
-
-        for image, label in val:
-            image = image.to(device)
-            label = label.to(device)
-
-            outputs = model(image)
-
-            val_loss += F.nll_loss(outputs, label).item()
-            correct += len((outputs.argmax(dim = 1) == label).nonzero())
-            wrong += 600 - len((outputs.argmax(dim = 1) == label).nonzero())
 
     # ======== testing =========
     test_loss = 0
@@ -204,9 +194,15 @@ def train(epochs = 100):
 
     print(f"Test Loss: {test_loss / len(test)} | Test Acc: {correct / (correct + wrong)} | Top 5 Acc: {top_5_c / (top_5_c + top_5_w)}")
 
+    # saving
+    np.save("/home/prs5019/cave/cifar/cave/valid_losses", val_loss)
+    np.save("/home/prs5019/cave/cifar/cave/train_losses", total_loss_hist)
+    np.save("/home/prs5019/cave/cifar/cave/test_loss", test_loss)
+    np.save("/home/prs5019/cave/cifar/cave/times", times)
+
     return model
 
 model = train(100)
-torch.save(model.state_dict(), "/home/prs5019/cave/cave_saved")
+torch.save(model.state_dict(), "/home/prs5019/cave/cifar/cave/model")
 
 # f.close()

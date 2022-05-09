@@ -5,6 +5,7 @@ import torchvision
 import torch.nn as nn
 import numpy as np
 import torch
+import time
 import copy
 import os
 
@@ -53,11 +54,17 @@ def train(epochs = 100, cave = False):
     min_loss = np.inf
     n_no_decrease = 0
 
-    cave = CAVE(n_step_nm = 7, low = 0, high = 1, dim = [1, 2, 3], unbiased = True)
+    cave = CAVE(n_step_nm = 7, n_step_gd = 0, low = 0, high = 1, dim = [1, 2, 3], unbiased = True)
+
+    train_t_losses = []
+    valid_t_losses = []
+    times = []
 
     for e in range(epochs):
 
         train_losses = []
+
+        start = time.time()
 
         for feat in train_loader:
 
@@ -71,6 +78,11 @@ def train(epochs = 100, cave = False):
 
             optimizer.step() # adjusting model parameters
 
+        end = time.time()
+        times.append(end - start)
+
+        train_t_losses.append(sum(train_t_losses) / len(train_t_losses))
+
         valid_losses = []
 
         with torch.no_grad():
@@ -82,8 +94,10 @@ def train(epochs = 100, cave = False):
 
                 valid_losses.append(loss.item())
 
-        if(sum(valid_losses) / len(valid_losses) < min_loss):
-            min_loss = sum(valid_losses) / len(valid_losses)
+        valid_t_losses.append(sum(valid_losses) / len(valid_losses))
+
+        if(valid_t_losses[-1] < min_loss):
+            min_loss = valid_t_losses[-1]
             max_state_dict = copy.deepcopy(model).state_dict()
         else:
             n_no_decrease += 1
@@ -91,11 +105,16 @@ def train(epochs = 100, cave = False):
         if(n_no_decrease > 9):
             break
 
-        print(f"Epoch {e} | Valid Loss {sum(valid_losses) / len(valid_losses)} | Train Loss {sum(train_losses) / len(train_losses)}")
+        print(f"Epoch {e} | Valid Loss {valid_t_losses[-1]} | Train Loss {train_t_losses[-1]}")
 
 
     # saving
-    torch.save(max_state_dict, "/home/prs5019/cave/inpainting")
+    torch.save(max_state_dict, "/home/prs5019/cave/inpainting/cave/model")
+    # saving losses
+    np.save("/home/prs5019/cave/inpainting/cave/valid_losses", np.array(valid_t_losses))
+    np.save("/home/prs5019/cave/inpainting/cave/train_losses", np.array(train_t_losses))
+    # saving times
+    np.save("/home/prs5019/cave/inpainting/cave/epoch_times", np.array(times))
 
 if(__name__ == "__main__"):
     train(cave = True)
