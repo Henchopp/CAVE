@@ -121,7 +121,7 @@ def train(epochs = 1, cave = False):
         for idx, feat in enumerate(test_loader):
 
             for im in range(feat.detach().cpu().shape[0]):
-                input = to_pil(feat.detach().cpu()[i])
+                input = to_pil(feat.detach().cpu()[im])
                 input.save(f"/home/prs5019/cave/inpainting/cave/test_inputs/{idx}-{im}.jpg")
                 input_mean.append(feat.mean())
 
