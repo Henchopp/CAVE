@@ -122,7 +122,7 @@ def train(epochs = 1, cave = False):
 
             for im in range(feat.detach().cpu().shape[0]):
                 input = to_pil(feat.detach().cpu()[im])
-                input.save(f"/home/prs5019/cave/inpainting/cave/test_inputs/{idx}-{im}.jpeg")
+                input.save(f"/home/prs5019/cave/inpainting/cave/test_inputs/{idx}_{im}.jpeg")
                 input_mean.append(feat.mean())
 
             feat = feat.to(device)
@@ -131,7 +131,7 @@ def train(epochs = 1, cave = False):
 
             for im in range(decoded.detach().cpu().shape[0]):
                 output = to_pil(decoded.detach().cpu()[im])
-                output.save(f"/home/prs5019/cave/inpainting/cave/test_outputs/{idx}-{im}.jpeg")
+                output.save(f"/home/prs5019/cave/inpainting/cave/test_outputs/{idx}_{im}.jpeg")
                 output_mean.append(decoded.mean())
 
             loss = F.mse_loss(decoded, feat)
