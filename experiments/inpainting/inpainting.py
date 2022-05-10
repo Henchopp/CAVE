@@ -36,7 +36,7 @@ class ImageNetData(Dataset):
 
         return self.crop(img)
 
-def train(epochs = 1, cave = False):
+def train(epochs = 100, cave = False):
 
     train = ImageNetData("/home/prs5019/cave/image_net/train")
     valid = ImageNetData("/home/prs5019/cave/image_net/valid")
