@@ -83,7 +83,7 @@ def train(epochs = 1, cave = False):
         end = time.time()
         times.append(end - start)
 
-        train_t_losses.append(sum(train_t_losses) / len(train_t_losses))
+        train_t_losses.append(sum(train_losses) / len(train_losses))
 
         valid_losses = []
 
