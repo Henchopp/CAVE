@@ -61,7 +61,7 @@ def train(epochs = 1, cave = False):
     train_t_losses = []
     valid_t_losses = []
     times = []
-
+    print(f"Running {epochs} epochs")
     for e in range(epochs):
 
         train_losses = []
