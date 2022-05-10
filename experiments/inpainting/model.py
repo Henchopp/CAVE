@@ -133,7 +133,7 @@ class AutoEncoder(nn.Module):
         super(AutoEncoder, self).__init__()
 
         if(use_cave == True):
-            encoding_space = encoding_space - 2
+            encoding_space = encoding_space - 1
 
         self.cave = CAVE(n_step_nm = 7, low = 0, high = 1, dim = [1, 2, 3], unbiased = True) if use_cave == True else None
 
@@ -148,7 +148,7 @@ class AutoEncoder(nn.Module):
                             mean = x.mean(dim = [1, 2, 3], keepdim = True),
                             var = None)#x.var(dim  = [1, 2, 3], keepdim = True, unbiased = True))
         else:
-            output = self.decoder(self.encoder(x))
+            output = self.decoder(self.encoder(x)).sigmoid()
         return output
 
     def encode(self, x):

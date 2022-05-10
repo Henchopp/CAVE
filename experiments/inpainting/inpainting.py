@@ -8,7 +8,7 @@ import torch
 import time
 import copy
 import os
-
+from PIL import Image
 from CAVE.cave import CAVE
 
 torch.autograd.set_detect_anomaly(True)
@@ -35,13 +35,15 @@ class ImageNetData(Dataset):
 
         return self.crop(img)
 
-def train(epochs = 100, cave = False):
+def train(epochs = 1, cave = False):
 
     train = ImageNetData("/home/prs5019/cave/image_net/train")
     valid = ImageNetData("/home/prs5019/cave/image_net/valid")
+    test = ImageNetData("/home/prs5019/cave/image_net/test")
 
     train_loader = DataLoader(train, batch_size = 4096, shuffle = True, num_workers = 16)
     valid_loader = DataLoader(valid, batch_size = 4096, shuffle = True, num_workers = 16)
+    test_loader = DataLoader(test, batch_size = 1, shuffle = False, num_workers = 1)
 
     model = AutoEncoder(use_cave = cave)
 
@@ -107,12 +109,40 @@ def train(epochs = 100, cave = False):
 
         print(f"Epoch {e} | Valid Loss {valid_t_losses[-1]} | Train Loss {train_t_losses[-1]}")
 
+    test_losses = []
+    input_mean = []
+    output_mean = []
+
+    with torch.no_grad():
+
+        for idx, feat in enumerate(test_loader):
+
+            input = Image.fromarray(feat.detach().cpu().numpy())
+            input.save(f"/home/prs5019/cave/inpainting/cave/test_inputs/{idx}")
+            input_mean.append(feat.mean())
+
+            feat = feat.to(device)
+
+            decoded = model(feat)
+
+            output = Image.fromarray(decoded.detach().cpu().numpy())
+            output.save(f"/home/prs5019/cave/inpainting/cave/test_outputs/{idx}")
+            output_mean.append(output.mean())
+
+            loss = F.mse_loss(decoded, feat)
+
+            test_losses.append(loss.item())
 
     # saving
     torch.save(max_state_dict, "/home/prs5019/cave/inpainting/cave/model")
     # saving losses
     np.save("/home/prs5019/cave/inpainting/cave/valid_losses", np.array(valid_t_losses))
     np.save("/home/prs5019/cave/inpainting/cave/train_losses", np.array(train_t_losses))
+    np.save("/home/prs5019/cave/inpainting/cave/test_losses", np.array(test_losses))
+    # saving means and mean divergence
+    np.save("/home/prs5019/cave/inpainting/cave/in_mean", np.array(input_mean))
+    np.save("/home/prs5019/cave/inpainting/cave/out_mean", np.array(output_mean))
+    np.save("/home/prs5019/cave/inpainting/cave/mean_divergence", np.abs(np.array(input_mean) - np.array(output_mean)))
     # saving times
     np.save("/home/prs5019/cave/inpainting/cave/epoch_times", np.array(times))
 
