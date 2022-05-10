@@ -44,7 +44,7 @@ def train(epochs = 1, cave = False):
 
     train_loader = DataLoader(train, batch_size = 4096, shuffle = True, num_workers = 16)
     valid_loader = DataLoader(valid, batch_size = 4096, shuffle = True, num_workers = 16)
-    test_loader = DataLoader(test, batch_size = 1, shuffle = False, num_workers = 1)
+    test_loader = DataLoader(test, batch_size = 10, shuffle = False, num_workers = 1)
 
     model = AutoEncoder(use_cave = cave)
 
@@ -120,17 +120,19 @@ def train(epochs = 1, cave = False):
 
         for idx, feat in enumerate(test_loader):
 
-            input = to_pil(feat.detach().cpu()[0])
-            input.save(f"/home/prs5019/cave/inpainting/cave/test_inputs/{idx}.jpg")
-            input_mean.append(feat.mean())
+            for im in range(feat.detach().cpu()):
+                input = to_pil(feat.detach().cpu()[i])
+                input.save(f"/home/prs5019/cave/inpainting/cave/test_inputs/{idx}-{im}.jpg")
+                input_mean.append(feat.mean())
 
             feat = feat.to(device)
 
             decoded = model(feat)
 
-            output = to_pil(decoded.detach().cpu()[0])
-            output.save(f"/home/prs5019/cave/inpainting/cave/test_outputs/{idx}.jpg")
-            output_mean.append(output.mean())
+            for im in range(decoded.detach().cpu()):
+                output = to_pil(decoded.detach().cpu()[im])
+                output.save(f"/home/prs5019/cave/inpainting/cave/test_outputs/{idx}-{im}.jpg")
+                output_mean.append(output.mean())
 
             loss = F.mse_loss(decoded, feat)
 
