@@ -139,17 +139,17 @@ def train(epochs = 100, cave = False):
             test_losses.append(loss.item())
 
     # saving
-    torch.save(max_state_dict, "/home/prs5019/cave/inpainting/no_cave/model")
+    torch.save(max_state_dict, "/home/prs5019/cave/inpainting/cave/model")
     # saving losses
-    np.save("/home/prs5019/cave/inpainting/no_cave/valid_losses", np.array(valid_t_losses))
-    np.save("/home/prs5019/cave/inpainting/no_cave/train_losses", np.array(train_t_losses))
-    np.save("/home/prs5019/cave/inpainting/no_cave/test_losses", np.array(test_losses))
+    np.save("/home/prs5019/cave/inpainting/cave/valid_losses", np.array(valid_t_losses))
+    np.save("/home/prs5019/cave/inpainting/cave/train_losses", np.array(train_t_losses))
+    np.save("/home/prs5019/cave/inpainting/cave/test_losses", np.array(test_losses))
     # saving means and mean divergence
-    np.save("/home/prs5019/cave/inpainting/no_cave/in_mean", np.array(input_mean))
-    np.save("/home/prs5019/cave/inpainting/no_cave/out_mean", np.array(output_mean))
-    np.save("/home/prs5019/cave/inpainting/no_cave/mean_divergence", np.abs(np.array(input_mean) - np.array(output_mean)))
+    np.save("/home/prs5019/cave/inpainting/cave/in_mean", np.array(input_mean))
+    np.save("/home/prs5019/cave/inpainting/cave/out_mean", np.array(output_mean))
+    np.save("/home/prs5019/cave/inpainting/cave/mean_divergence", np.abs(np.array(input_mean) - np.array(output_mean)))
     # saving times
-    np.save("/home/prs5019/cave/inpainting/no_cave/epoch_times", np.array(times))
+    np.save("/home/prs5019/cave/inpainting/cave/epoch_times", np.array(times))
 
 if(__name__ == "__main__"):
-    train(cave = False)
+    train(cave = True)
