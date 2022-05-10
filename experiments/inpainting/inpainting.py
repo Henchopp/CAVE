@@ -1,6 +1,7 @@
 from model import AutoEncoder
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
+from torchvision.transforms import ToPILImage
 import torchvision
 import torch.nn as nn
 import numpy as np
@@ -113,11 +114,13 @@ def train(epochs = 1, cave = False):
     input_mean = []
     output_mean = []
 
+    to_pil = ToPILImage()
+
     with torch.no_grad():
 
         for idx, feat in enumerate(test_loader):
 
-            input = Image.fromarray(feat.detach().cpu().numpy())
+            input = to_pil(torch.detach().cpu())
             input.save(f"/home/prs5019/cave/inpainting/cave/test_inputs/{idx}")
             input_mean.append(feat.mean())
 
@@ -125,7 +128,7 @@ def train(epochs = 1, cave = False):
 
             decoded = model(feat)
 
-            output = Image.fromarray(decoded.detach().cpu().numpy())
+            output = to_pil(decoded.detach().cpu())
             output.save(f"/home/prs5019/cave/inpainting/cave/test_outputs/{idx}")
             output_mean.append(output.mean())
 
