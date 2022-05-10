@@ -132,7 +132,7 @@ def train(epochs = 1, cave = False):
             for im in range(decoded.detach().cpu().shape[0]):
                 output = to_pil(decoded.detach().cpu()[im])
                 output.save(f"/home/prs5019/cave/inpainting/cave/test_outputs/{idx}-{im}.jpg")
-                output_mean.append(output.mean())
+                output_mean.append(decoded.mean())
 
             loss = F.mse_loss(decoded, feat)
 
