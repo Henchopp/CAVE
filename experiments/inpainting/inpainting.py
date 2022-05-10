@@ -121,7 +121,7 @@ def train(epochs = 1, cave = False):
         for idx, feat in enumerate(test_loader):
 
             input = to_pil(feat.detach().cpu()[0])
-            input.save(f"/home/prs5019/cave/inpainting/cave/test_inputs/{idx}")
+            input.save(f"/home/prs5019/cave/inpainting/cave/test_inputs/{idx}.jpg")
             input_mean.append(feat.mean())
 
             feat = feat.to(device)
@@ -129,7 +129,7 @@ def train(epochs = 1, cave = False):
             decoded = model(feat)
 
             output = to_pil(decoded.detach().cpu()[0])
-            output.save(f"/home/prs5019/cave/inpainting/cave/test_outputs/{idx}")
+            output.save(f"/home/prs5019/cave/inpainting/cave/test_outputs/{idx}.jpg")
             output_mean.append(output.mean())
 
             loss = F.mse_loss(decoded, feat)
