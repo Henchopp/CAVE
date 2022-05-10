@@ -120,7 +120,7 @@ def train(epochs = 1, cave = False):
 
         for idx, feat in enumerate(test_loader):
 
-            input = to_pil(torch.detach().cpu())
+            input = to_pil(feat.detach().cpu())
             input.save(f"/home/prs5019/cave/inpainting/cave/test_inputs/{idx}")
             input_mean.append(feat.mean())
 
