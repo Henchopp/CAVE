@@ -57,8 +57,6 @@ def train(epochs = 100, cave = False):
     min_loss = np.inf
     n_no_decrease = 0
 
-    cave = CAVE(n_step_nm = 7, n_step_gd = 0, low = 0, high = 1, dim = [1, 2, 3], unbiased = True)
-
     train_t_losses = []
     valid_t_losses = []
     times = []
@@ -102,6 +100,8 @@ def train(epochs = 100, cave = False):
         if(valid_t_losses[-1] < min_loss):
             min_loss = valid_t_losses[-1]
             max_state_dict = copy.deepcopy(model).state_dict()
+
+            n_no_decrease = 0
         else:
             n_no_decrease += 1
 
