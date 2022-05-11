@@ -152,4 +152,4 @@ def train(epochs = 100, cave = False):
     np.save("/home/prs5019/cave/inpainting/cave/epoch_times", np.array(times))
 
 if(__name__ == "__main__"):
-    train(cave = True)
+    train(cave = False)
