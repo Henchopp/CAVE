@@ -100,10 +100,10 @@ class Decoder(nn.Module):
         self.bn2 = nn.BatchNorm1d(num_features = 4096)
 
         self.conv1 = BatchConvReLU(64, 16)
-        self.dconv1 = BatchDeconvReLU(16, 16)
+        self.dconv1 = BatchDeconvReLU(16, 16, ksize = 2)
 
         self.conv2 = BatchConvReLU(16, 16)
-        self.dconv2 = BatchDeconvReLU(16, 16)
+        self.dconv2 = BatchDeconvReLU(16, 16, ksize = 2)
 
         self.conv3 = BatchConvReLU(16, 16)
         self.dconv3 = BatchDeconvReLU(16, 16, ksize = 2)
@@ -114,7 +114,7 @@ class Decoder(nn.Module):
         self.conv5 = BatchConvReLU(16, 16)
         self.dconv5 = nn.ConvTranspose2d(in_channels = 16,
 		                                 out_channels = 3,
-		                                 kernel_size = 4,
+		                                 kernel_size = 2,
 		                                 stride = 2,
 		                                 padding = 1,
 		                                 bias = True)
