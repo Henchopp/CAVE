@@ -96,25 +96,25 @@ class Decoder(nn.Module):
         self.fc1 = nn.Linear(encoding_space, 1024) # should take in encoded vector
         self.bn1 = nn.BatchNorm1d(num_features = 1024)
 
-        self.fc2 = nn.Linear(1024, 4096)
-        self.bn2 = nn.BatchNorm1d(num_features = 4096)
+        self.fc2 = nn.Linear(1024, 1024)
+        self.bn2 = nn.BatchNorm1d(num_features = 1024)
 
         self.conv1 = BatchConvReLU(64, 16)
-        self.dconv1 = BatchDeconvReLU(16, 16, ksize = 1)
+        self.dconv1 = BatchDeconvReLU(16, 16)
 
         self.conv2 = BatchConvReLU(16, 16)
-        self.dconv2 = BatchDeconvReLU(16, 16, ksize = 1)
+        self.dconv2 = BatchDeconvReLU(16, 16)
 
         self.conv3 = BatchConvReLU(16, 16)
-        self.dconv3 = BatchDeconvReLU(16, 16, ksize = 1)
+        self.dconv3 = BatchDeconvReLU(16, 16)
 
         self.conv4 = BatchConvReLU(16, 16)
-        self.dconv4 = BatchDeconvReLU(16, 16, ksize = 1)
+        self.dconv4 = BatchDeconvReLU(16, 16)
 
         self.conv5 = BatchConvReLU(16, 16)
         self.dconv5 = nn.ConvTranspose2d(in_channels = 16,
 		                                 out_channels = 3,
-		                                 kernel_size = 1,
+		                                 kernel_size = 4,
 		                                 stride = 2,
 		                                 padding = 1,
 		                                 bias = True)
@@ -125,7 +125,7 @@ class Decoder(nn.Module):
         x = F.relu(self.bn1(self.fc1(x)))
         x = F.relu(self.bn2(self.fc2(x)))
         # === reshape ===
-        x = x.reshape(x.shape[0], 64, 8, 8)
+        x = x.reshape(x.shape[0], 64, 4, 4)
 
         # === convolve ===
         x = self.dconv1(self.conv1(x))
