@@ -105,7 +105,7 @@ class Decoder(nn.Module):
         self.conv2 = BatchConvReLU(16, 16)
         self.dconv2 = BatchDeconvReLU(16, 16)
 
-        self.conv3 = BatchConvReLU(64, 16)
+        self.conv3 = BatchConvReLU(16, 16)
         self.dconv3 = BatchDeconvReLU(16, 16)
 
         self.conv4 = BatchConvReLU(16, 16)
