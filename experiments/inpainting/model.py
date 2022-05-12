@@ -62,9 +62,9 @@ class Encoder(nn.Module):
         # layer 4
         self.conv4 = BatchConvReLU(64, 64)
         # layer 5
-        elf.conv4 = BatchConvReLU(64, 64)
+        self.conv5 = BatchConvReLU(64, 64)
         # layer 6
-        self.conv5 = BatchConvReLU(64, 16)
+        self.conv6 = BatchConvReLU(64, 16)
         self.mpool2 = nn.MaxPool2d(kernel_size = 2, stride = 2)
 
         # ======= MLP =======
@@ -79,7 +79,8 @@ class Encoder(nn.Module):
         x = self.mpool1(self.conv2(x))
         x = self.conv3(x)
         x = self.conv4(x)
-        x = self.mpool2(self.conv5(x))
+        x = self.conv5(x)
+        x = self.mpool2(self.conv6(x))
 
         # === flattening ===
         x = x.reshape(x.shape[0], -1)
