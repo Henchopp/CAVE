@@ -105,7 +105,7 @@ def train(epochs = 1000, cave = False):
         else:
             n_no_decrease += 1
 
-        if(n_no_decrease > 9):
+        if(n_no_decrease > 19):
             break
 
         print(f"Epoch {e} | Valid Loss {valid_t_losses[-1]} | Train Loss {train_t_losses[-1]}")
