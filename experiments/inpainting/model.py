@@ -122,7 +122,7 @@ class Decoder(nn.Module):
         x = F.relu(self.bn1(self.fc1(x)))
         x = F.relu(self.bn2(self.fc2(x)))
         # === reshape ===
-        x = x.reshape(x.shape[0], 64, 2, 2)
+        x = x.reshape(x.shape[0], 64, 8, 8)
 
         # === convolve ===
         x = self.dconv1(self.conv1(x))
