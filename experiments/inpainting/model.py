@@ -99,7 +99,7 @@ class Decoder(nn.Module):
         self.fc1 = nn.Linear(encoding_space, 1024) # should take in encoded vector
         self.bn1 = nn.BatchNorm1d(num_features = 1024)
 
-        self.fc2 = nn.Linear(1024, 256)
+        self.fc2 = nn.Linear(1024, 4096)
         self.bn2 = nn.BatchNorm1d(num_features = 4096)
 
         self.conv1 = BatchConvReLU(64, 16)
