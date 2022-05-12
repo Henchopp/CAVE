@@ -62,6 +62,8 @@ class Encoder(nn.Module):
         # layer 4
         self.conv4 = BatchConvReLU(64, 64)
         # layer 5
+        elf.conv4 = BatchConvReLU(64, 64)
+        # layer 6
         self.conv5 = BatchConvReLU(64, 16)
         self.mpool2 = nn.MaxPool2d(kernel_size = 2, stride = 2)
 
@@ -97,7 +99,7 @@ class Decoder(nn.Module):
         self.bn1 = nn.BatchNorm1d(num_features = 1024)
 
         self.fc2 = nn.Linear(1024, 256)
-        self.bn2 = nn.BatchNorm1d(num_features = 256)
+        self.bn2 = nn.BatchNorm1d(num_features = 4096)
 
         self.conv1 = BatchConvReLU(64, 16)
         self.dconv1 = BatchDeconvReLU(16, 16)
@@ -106,13 +108,7 @@ class Decoder(nn.Module):
         self.dconv2 = BatchDeconvReLU(16, 16)
 
         self.conv3 = BatchConvReLU(16, 16)
-        self.dconv3 = BatchDeconvReLU(16, 16)
-
-        self.conv4 = BatchConvReLU(16, 16)
-        self.dconv4 = BatchDeconvReLU(16, 16)
-
-        self.conv5 = BatchConvReLU(16, 16)
-        self.dconv5 = nn.ConvTranspose2d(in_channels = 16,
+        self.dconv3 = nn.ConvTranspose2d(in_channels = 16,
 		                                 out_channels = 3,
 		                                 kernel_size = 4,
 		                                 stride = 2,
@@ -130,10 +126,8 @@ class Decoder(nn.Module):
         # === convolve ===
         x = self.dconv1(self.conv1(x))
         x = self.dconv2(self.conv2(x))
-        x = self.dconv3(self.conv3(x))
-        x = self.dconv4(self.conv4(x))
 
-        return self.dconv5(self.conv5(x))
+        return self.dconv3(self.conv3(x))
 
 class AutoEncoder(nn.Module):
 
