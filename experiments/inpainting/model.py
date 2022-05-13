@@ -68,8 +68,13 @@ class Encoder(nn.Module):
 
         # ======= MLP =======
 
-        self.fc1 = nn.Linear(4096, 1024, bias = True)
-        self.fc2 = nn.Linear(1024, encoding_space, bias = True) # should output vector in encoded space
+        self.fc1 = nn.Linear(4096, 4096, bias = True)
+        self.bn1 = nn.BatchNorm1d(num_features = 4096)
+        self.fc2 = nn.Linear(4096, 4096, bias = True)
+        self.bn2 = nn.BatchNorm1d(num_features = 4096)
+        self.fc3 = nn.Linear(4096, 1024, bias = True)
+        self.bn3 = nn.BatchNorm1d(num_features = 1024)
+        self.fc4 = nn.Linear(1024, encoding_space, bias = True) # should output vector in encoded space
 
     def forward(self, x):
 
@@ -85,8 +90,10 @@ class Encoder(nn.Module):
         x = x.reshape(x.shape[0], -1)
 
         # === mlp ===
-        x = self.fc1(x)
-        x = self.fc2(x)
+        x = self.bn1(self.fc1(x))
+        x = self.bn2(self.fc2(x))
+        x = self.bn3(self.fc3(x))
+        x = self.fc4(x)
 
         return x
 
