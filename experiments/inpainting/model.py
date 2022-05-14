@@ -108,14 +108,14 @@ class Decoder(nn.Module):
         self.fc2 = nn.Linear(1024, 4096)
         self.bn2 = nn.BatchNorm1d(num_features = 4096)
 
-        self.conv1 = BatchConvReLU(64, 16)
-        self.dconv1 = BatchDeconvReLU(16, 16)
+        self.conv1 = BatchConvReLU(64, 128)
+        self.dconv1 = BatchDeconvReLU(128, 128)
 
-        self.conv2 = BatchConvReLU(16, 16)
-        self.dconv2 = BatchDeconvReLU(16, 16)
+        self.conv2 = BatchConvReLU(128, 512)
+        self.dconv2 = BatchDeconvReLU(512, 128)
 
-        self.conv3 = BatchConvReLU(16, 16)
-        self.dconv3 = nn.ConvTranspose2d(in_channels = 16,
+        self.conv3 = BatchConvReLU(128, 64)
+        self.dconv3 = nn.ConvTranspose2d(in_channels = 64,
 		                                 out_channels = 3,
 		                                 kernel_size = 4,
 		                                 stride = 2,
