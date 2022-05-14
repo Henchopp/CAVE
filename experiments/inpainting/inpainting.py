@@ -42,8 +42,8 @@ def train(epochs = 1000, cave = False):
     valid = ImageNetData("/home/prs5019/cave/image_net/valid")
     test = ImageNetData("/home/prs5019/cave/image_net/test")
 
-    train_loader = DataLoader(train, batch_size = 3072, shuffle = True, num_workers = 16)
-    valid_loader = DataLoader(valid, batch_size = 3072, shuffle = True, num_workers = 16)
+    train_loader = DataLoader(train, batch_size = 2560, shuffle = True, num_workers = 16)
+    valid_loader = DataLoader(valid, batch_size = 2560, shuffle = True, num_workers = 16)
     test_loader = DataLoader(test, batch_size = 10, shuffle = False, num_workers = 1)
 
     model = AutoEncoder(use_cave = cave)
