@@ -15,7 +15,7 @@ class BatchConvReLU(nn.Module):
             kernel_size = ksize,
             stride = 1,
             padding = 1,
-            # padding_mode = "replicate",
+            padding_mode = "replicate",
             bias = False
         )
 
@@ -53,14 +53,14 @@ class Encoder(nn.Module):
         super(Encoder, self).__init__()
 
         # layer 1
-        self.conv1 = BatchConvReLU(3, 32)
+        self.conv1 = BatchConvReLU(3, 16)
         # layer 2
-        self.conv2 = BatchConvReLU(32, 128)
+        self.conv2 = BatchConvReLU(16, 64)
         self.mpool1 = nn.MaxPool2d(kernel_size = 2, stride = 2)
         # layer 3
-        self.conv3 = BatchConvReLU(128, 512)
+        self.conv3 = BatchConvReLU(64, 128)
         # layer 4
-        self.conv4 = BatchConvReLU(512, 64)
+        self.conv4 = BatchConvReLU(128, 64)
 
         # layer 5
         self.conv5 = BatchConvReLU(64, 16)
