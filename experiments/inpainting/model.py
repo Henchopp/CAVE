@@ -53,9 +53,9 @@ class Encoder(nn.Module):
         super(Encoder, self).__init__()
 
         # layer 1
-        self.conv1 = BatchConvReLU(3, 16)
+        self.conv1 = BatchConvReLU(3, 32)
         # layer 2
-        self.conv2 = BatchConvReLU(16, 64)
+        self.conv2 = BatchConvReLU(32, 128)
         self.mpool1 = nn.MaxPool2d(kernel_size = 2, stride = 2)
         # layer 3
         self.conv3 = BatchConvReLU(128, 512)
