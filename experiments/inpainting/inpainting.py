@@ -52,7 +52,7 @@ def train(epochs = 1000, cave = False):
 
     model.train()
 
-    optimizer = torch.optim.Adam(model.parameters(), lr = 1.0e-4, betas = (0.9, 0.999))
+    optimizer = torch.optim.Adam(model.parameters(), lr = 1.0e-3, betas = (0.9, 0.999))
 
     min_loss = np.inf
     n_no_decrease = 0
@@ -105,7 +105,7 @@ def train(epochs = 1000, cave = False):
         else:
             n_no_decrease += 1
 
-        if(n_no_decrease > 999):
+        if(n_no_decrease > 300):
             break
 
         print(f"Epoch {e} | Valid Loss {valid_t_losses[-1]} | Train Loss {train_t_losses[-1]}")
