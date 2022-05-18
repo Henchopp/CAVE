@@ -52,7 +52,7 @@ def train(epochs = 1000, cave = False):
 
     model.train()
 
-    optimizer = torch.optim.Adam(model.parameters(), lr = 1.0e-3, betas = (0.9, 0.999))
+    optimizer = torch.optim.Adam(model.parameters(), lr = 1.0e-4, betas = (0.9, 0.999))
 
     min_loss = np.inf
     n_no_decrease = 0
