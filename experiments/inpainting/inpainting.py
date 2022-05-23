@@ -56,7 +56,7 @@ def train(epochs = 1000, cave = False):
     optimizer = torch.optim.Adam(model.parameters(), lr = 1.0e-4, betas = (0.9, 0.999))
 
     # =================== perceptual loss =================
-    vgg = vgg16(pretrained = True).classifier[: -1]
+    vgg = vgg16(pretrained = True)
     print(vgg)
     def perceptual_loss(y_, y):
 
