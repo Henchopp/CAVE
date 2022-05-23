@@ -2,6 +2,7 @@ from model import AutoEncoder
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 from torchvision.transforms import ToPILImage
+from torchvision.models import vgg16
 import torchvision
 import torch.nn as nn
 import numpy as np
@@ -53,6 +54,13 @@ def train(epochs = 1000, cave = False):
     model.train()
 
     optimizer = torch.optim.Adam(model.parameters(), lr = 1.0e-4, betas = (0.9, 0.999))
+
+    # =================== perceptual loss =================
+    vgg = vgg16(pretrained = True).classifier[: -1]
+    print(vgg)
+    def perceptual_loss(y_, y):
+
+        return vgg(y_) - vgg(y)
 
     min_loss = np.inf
     n_no_decrease = 0
