@@ -56,11 +56,10 @@ def train(epochs = 1000, cave = False):
     optimizer = torch.optim.Adam(model.parameters(), lr = 1.0e-4, betas = (0.9, 0.999))
 
     # =================== perceptual loss =================
-    vgg = vgg16(pretrained = True).features[: -1]
-    print(vgg)
-    def perceptual_loss(y_, y):
+    vgg = vgg16(pretrained = True).features[: 22]
 
-        return vgg(y_) - vgg(y)
+    def perceptual_loss(y_, y):
+        return F.mse_loss(vgg(y_), vgg(y))
 
     min_loss = np.inf
     n_no_decrease = 0
@@ -81,7 +80,7 @@ def train(epochs = 1000, cave = False):
 
             optimizer.zero_grad()
 
-            loss = F.mse_loss(model(feat), feat) # getting mean squared error loss
+            loss = perceptual_loss(model(feat), feat) # getting mean squared error loss
             train_losses.append(loss.item())
             loss.backward() # backwards sweep
 
@@ -99,7 +98,7 @@ def train(epochs = 1000, cave = False):
             for feat in valid_loader:
                 feat = feat.to(device)
 
-                loss = F.mse_loss(model(feat), feat)
+                loss = perceptual_loss(model(feat), feat)
 
                 valid_losses.append(loss.item())
 
@@ -142,7 +141,7 @@ def train(epochs = 1000, cave = False):
                 output.save(f"/home/prs5019/cave/inpainting/cave/test_outputs/{idx}_{im}.jpeg")
                 output_mean.append(decoded.detach().cpu().mean())
 
-            loss = F.mse_loss(decoded, feat)
+            loss = perceptual_loss(decoded, feat)
 
             test_losses.append(loss.item())
 
