@@ -39,9 +39,9 @@ class ImageNetData(Dataset):
 
 def train(epochs = 1000, cave = False):
 
-    train = ImageNetData("/home/prs5019/cave/image_net/train")
-    valid = ImageNetData("/home/prs5019/cave/image_net/valid")
-    test = ImageNetData("/home/prs5019/cave/image_net/test")
+    train = ImageNetData("/data/prs5019/cave/image_net/train")
+    valid = ImageNetData("/data/prs5019/cave/image_net/valid")
+    test = ImageNetData("/data/prs5019/cave/image_net/test")
 
     train_loader = DataLoader(train, batch_size = 1024, shuffle = True, num_workers = 16)
     valid_loader = DataLoader(valid, batch_size = 1024, shuffle = True, num_workers = 16)
@@ -56,7 +56,7 @@ def train(epochs = 1000, cave = False):
     optimizer = torch.optim.Adam(model.parameters(), lr = 1.0e-4, betas = (0.9, 0.999))
 
     # =================== perceptual loss =================
-    vgg = vgg16(pretrained = True).features[: 22].to(device)
+    vgg = vgg16(pretrained = True).features[: 10].to(device)
 
     def perceptual_loss(y_, y):
         return F.mse_loss(vgg(y_), vgg(y))
@@ -80,7 +80,9 @@ def train(epochs = 1000, cave = False):
 
             optimizer.zero_grad()
 
-            loss = perceptual_loss(model(feat), feat) # getting mean squared error loss
+            output = model(feat)
+
+            loss = F.mse_loss(output, feat) + perceptual_loss(output, feat) # getting mean squared error loss
             train_losses.append(loss.item())
             loss.backward() # backwards sweep
 
@@ -129,7 +131,7 @@ def train(epochs = 1000, cave = False):
 
             for im in range(feat.detach().cpu().shape[0]):
                 input = to_pil(feat.detach().cpu()[im])
-                input.save(f"/home/prs5019/cave/inpainting/cave/test_inputs/{idx}_{im}.jpeg")
+                input.save(f"/data/prs5019/cave/inpainting/cave/test_inputs/{idx}_{im}.jpeg")
                 input_mean.append(feat.detach().cpu().mean())
 
             feat = feat.to(device)
@@ -138,7 +140,7 @@ def train(epochs = 1000, cave = False):
 
             for im in range(decoded.detach().cpu().shape[0]):
                 output = to_pil(decoded.detach().cpu()[im])
-                output.save(f"/home/prs5019/cave/inpainting/cave/test_outputs/{idx}_{im}.jpeg")
+                output.save(f"/data/prs5019/cave/inpainting/cave/test_outputs/{idx}_{im}.jpeg")
                 output_mean.append(decoded.detach().cpu().mean())
 
             loss = perceptual_loss(decoded, feat)
@@ -146,17 +148,17 @@ def train(epochs = 1000, cave = False):
             test_losses.append(loss.item())
 
     # saving
-    torch.save(max_state_dict, "/home/prs5019/cave/inpainting/cave/model")
+    torch.save(max_state_dict, "/data/prs5019/cave/inpainting/cave/model")
     # saving losses
-    np.save("/home/prs5019/cave/inpainting/cave/valid_losses", np.array(valid_t_losses))
-    np.save("/home/prs5019/cave/inpainting/cave/train_losses", np.array(train_t_losses))
-    np.save("/home/prs5019/cave/inpainting/cave/test_losses", np.array(test_losses))
+    np.save("/data/prs5019/cave/inpainting/cave/valid_losses", np.array(valid_t_losses))
+    np.save("/data/prs5019/cave/inpainting/cave/train_losses", np.array(train_t_losses))
+    np.save("/data/prs5019/cave/inpainting/cave/test_losses", np.array(test_losses))
     # saving means and mean divergence
-    np.save("/home/prs5019/cave/inpainting/cave/in_mean", np.array(input_mean))
-    np.save("/home/prs5019/cave/inpainting/cave/out_mean", np.array(output_mean))
-    np.save("/home/prs5019/cave/inpainting/cave/mean_divergence", np.abs(np.array(input_mean) - np.array(output_mean)))
+    np.save("/data/prs5019/cave/inpainting/cave/in_mean", np.array(input_mean))
+    np.save("/data/prs5019/cave/inpainting/cave/out_mean", np.array(output_mean))
+    np.save("/data/prs5019/cave/inpainting/cave/mean_divergence", np.abs(np.array(input_mean) - np.array(output_mean)))
     # saving times
-    np.save("/home/prs5019/cave/inpainting/cave/epoch_times", np.array(times))
+    np.save("/data/prs5019/cave/inpainting/cave/epoch_times", np.array(times))
 
 if(__name__ == "__main__"):
     train(cave = False)
