@@ -100,6 +100,8 @@ def train(epochs = 1000, cave = False):
             for feat in valid_loader:
                 feat = feat.to(device)
 
+                output = model(feat)
+
                 loss = F.mse_loss(output, feat) + 25 * perceptual_loss(output, feat)
 
                 valid_losses.append(loss.item())
@@ -143,7 +145,7 @@ def train(epochs = 1000, cave = False):
                 output.save(f"/data/prs5019/cave/inpainting/cave/test_outputs/{idx}_{im}.jpeg")
                 output_mean.append(decoded.detach().cpu().mean())
 
-            loss = F.mse_loss(output, feat) + 25 * perceptual_loss(output, feat)
+            loss = F.mse_loss(decoded, feat) + 25 * perceptual_loss(decoded, feat)
 
             test_losses.append(loss.item())
 
