@@ -82,7 +82,7 @@ def train(epochs = 1000, cave = False):
 
             output = model(feat)
 
-            loss = F.mse_loss(output, feat) + perceptual_loss(output, feat) # getting mean squared error loss
+            loss = F.mse_loss(output, feat) + 25 * perceptual_loss(output, feat) # getting mean squared error loss
             train_losses.append(loss.item())
             loss.backward() # backwards sweep
 
@@ -114,7 +114,7 @@ def train(epochs = 1000, cave = False):
         else:
             n_no_decrease += 1
 
-        if(n_no_decrease > 300):
+        if(n_no_decrease > 20):
             break
 
         print(f"Epoch {e} | Valid Loss {valid_t_losses[-1]} | Train Loss {train_t_losses[-1]}")
